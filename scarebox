@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ScareBox — The community scenepack archive</title>
+<meta name="description" content="ScareBox is a community-run scenepack index for TikTok editors. Browse, download, and donate scenepacks with credit that stays attached.">
+<meta name="theme-color" content="#06060A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='4' width='56' height='56' rx='18' fill='%238B6DFF'/%3E%3Crect x='4' y='4' width='56' height='56' rx='18' fill='none' stroke='white' stroke-opacity='.35' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   SCAREBOX — DESIGN TOKENS
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#06060A;
+  --surface-rgb:255,255,255;
+  --surface-a:.055;
+  --surface-mult:1;
+  --border:rgba(255,255,255,.09);
+  --border-2:rgba(255,255,255,.16);
+  --text:#F6F6F8;
+  --text-2:#A2A2AF;
+  --text-3:#6B6B78;
+  --accent:#8B6DFF;
+  --accent-2:#5B8CFF;
+  --ok:#30D158;
+  --warn:#FFD60A;
+  --danger:#FF453A;
+  --r1:10px; --r2:14px; --r3:20px; --r4:28px;
+  --blur:34px;
+  --sidebar-w:236px;
+  --toolbar-h:60px;
+  --spring:cubic-bezier(.2,.9,.3,1.1);
+  --shadow:0 24px 70px -28px rgba(0,0,0,.85);
+  --glow:0 0 0 1px rgba(var(--surface-rgb),.04), 0 18px 50px -22px var(--accent);
+}
+[data-theme="light"]{
+  --bg:#F0F0F4;
+  --surface-rgb:255,255,255;
+  --surface-mult:11;
+  --border:rgba(0,0,0,.09);
+  --border-2:rgba(0,0,0,.17);
+  --text:#0B0B10;
+  --text-2:#55555F;
+  --text-3:#8A8A96;
+  --shadow:0 24px 60px -30px rgba(0,0,0,.35);
+}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",system-ui,"Segoe UI",sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;
+}
+h1,h2,h3,h4{margin:0;letter-spacing:-.025em;line-height:1.15;font-weight:650}
+h1{letter-spacing:-.035em}
+p{margin:0}
+a{color:var(--accent-2);text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(var(--surface-rgb),.14);border-radius:99px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(var(--surface-rgb),.24);background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+::selection{background:color-mix(in srgb,var(--accent) 45%,transparent)}
+
+/* ============================================================
+   ATMOSPHERE
+   ============================================================ */
+.atmos{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(110px);opacity:.42;will-change:transform}
+.orb.a{width:620px;height:620px;left:-14%;top:-18%;background:var(--accent);animation:drift1 26s ease-in-out infinite}
+.orb.b{width:540px;height:540px;right:-12%;top:8%;background:var(--accent-2);animation:drift2 32s ease-in-out infinite}
+.orb.c{width:480px;height:480px;left:32%;bottom:-22%;background:var(--accent);opacity:.25;animation:drift3 38s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,60px) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1.05)}50%{transform:translate(-80px,50px) scale(.92)}}
+@keyframes drift3{0%,100%{transform:translate(0,0)}50%{transform:translate(50px,-70px)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.032;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
+.vig{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(125% 105% at 50% 38%,transparent 38%,rgba(0,0,0,.55) 100%)}
+[data-theme="light"] .vig{background:radial-gradient(125% 105% at 50% 38%,transparent 45%,rgba(20,20,40,.07) 100%)}
+[data-theme="light"] .grain{opacity:.02}
+[data-theme="light"] .orb{opacity:.3}
+
+/* ============================================================
+   GLASS MATERIAL
+   ============================================================ */
+.glass{
+  position:relative;
+  background:rgba(var(--surface-rgb),calc(var(--surface-a) * var(--surface-mult)));
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(190%);
+  backdrop-filter:blur(var(--blur)) saturate(190%);
+  border:1px solid var(--border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.075), var(--shadow);
+}
+.glass::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(155deg,rgba(255,255,255,.26),rgba(255,255,255,.03) 38%,transparent 62%,rgba(255,255,255,.08));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+[data-theme="light"] .glass{box-shadow:inset 0 1px 0 rgba(255,255,255,.9), var(--shadow)}
+[data-theme="light"] .glass::after{background:linear-gradient(155deg,rgba(255,255,255,.9),rgba(255,255,255,.2) 40%,transparent 65%,rgba(255,255,255,.5))}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen{position:relative;z-index:2;height:100%}
+.hidden{display:none !important}
+
+/* ---------- WELCOME ---------- */
+#welcome{display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+.floaters{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.floaters span{position:absolute;border-radius:16px;opacity:.5;filter:blur(1px);animation:float 14s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(var(--rot))}50%{transform:translateY(-22px) rotate(calc(var(--rot) + 3deg))}}
+.wpanel{position:relative;z-index:2;width:100%;max-width:440px;border-radius:var(--r4);padding:38px 34px 26px;text-align:center;animation:pop .6s var(--spring) both}
+@keyframes pop{from{opacity:0;transform:scale(.95) translateY(14px)}to{opacity:1;transform:none}}
+.logo-wrap{width:74px;height:74px;margin:0 auto 18px;position:relative}
+.logo-wrap svg{width:100%;height:100%;display:block;filter:drop-shadow(0 10px 30px color-mix(in srgb,var(--accent) 55%,transparent))}
+.wpanel h1{font-size:34px;margin-bottom:6px}
+.tagline{color:var(--text-2);font-size:14px;margin-bottom:26px}
+.rules{margin-top:22px;text-align:left;border-radius:var(--r2);border:1px solid var(--border);
+  background:rgba(var(--surface-rgb),.03);padding:14px 16px;max-height:132px;overflow-y:auto;font-size:12.5px;color:var(--text-2);line-height:1.62}
+.rules b{color:var(--text);font-weight:600}
+.rules ul{margin:6px 0 0;padding-left:17px}
+.rules li{margin-bottom:4px}
+.agree{display:flex;gap:10px;align-items:flex-start;text-align:left;margin-top:16px;font-size:12.5px;color:var(--text-2);cursor:pointer;line-height:1.5}
+.agree input{margin-top:2px;accent-color:var(--accent);width:16px;height:16px;flex:none;cursor:pointer}
+.wfoot{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:12px}
+.wfoot button{color:var(--text-3);transition:color .2s}
+.wfoot button:hover{color:var(--text)}
+
+/* ============================================================
+   FORM CONTROLS
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 16px;border-radius:var(--r1);font-size:13.5px;font-weight:560;
+  border:1px solid var(--border-2);background:rgba(var(--surface-rgb),.06);
+  color:var(--text);transition:transform .16s var(--spring),background .2s,border-color .2s,box-shadow .25s;
+  white-space:nowrap;position:relative;overflow:hidden;
+}
+.btn:hover{background:rgba(var(--surface-rgb),.11);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn.primary{
+  border-color:transparent;color:#fff;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 10px 30px -12px var(--accent);
+}
+.btn.primary::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);
+  transform:translateX(-120%);
+}
+.btn.primary:hover::before{animation:sheen .85s ease}
+@keyframes sheen{to{transform:translateX(120%)}}
+.btn.primary:hover{box-shadow:0 16px 40px -12px var(--accent);filter:brightness(1.06)}
+.btn.ghost{background:transparent;border-color:var(--border)}
+.btn.danger{border-color:color-mix(in srgb,var(--danger) 45%,transparent);color:var(--danger)}
+.btn.danger:hover{background:color-mix(in srgb,var(--danger) 14%,transparent)}
+.btn.sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+.btn.block{width:100%}
+.btn.ok{border-color:color-mix(in srgb,var(--ok) 45%,transparent);color:var(--ok)}
+.btn.ok:hover{background:color-mix(in srgb,var(--ok) 14%,transparent)}
+
+.field{margin-bottom:14px;text-align:left}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;letter-spacing:.01em}
+.input,textarea.input,select.input{
+  width:100%;padding:11px 13px;border-radius:var(--r1);
+  background:rgba(var(--surface-rgb),.045);border:1px solid var(--border);
+  outline:none;transition:border-color .2s,box-shadow .25s,background .2s;font-size:13.5px;
+}
+textarea.input{resize:vertical;min-height:78px;line-height:1.55}
+.input:focus{border-color:color-mix(in srgb,var(--accent) 60%,transparent);
+  box-shadow:0 0 0 3.5px color-mix(in srgb,var(--accent) 18%,transparent);background:rgba(var(--surface-rgb),.07)}
+.input::placeholder{color:var(--text-3)}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
+select.input option{background:#121218;color:#F6F6F8}
+[data-theme="light"] select.input option{background:#fff;color:#0B0B10}
+.hint{font-size:11.5px;color:var(--text-3);margin-top:6px;line-height:1.5}
+.err{font-size:12px;color:var(--danger);margin-top:6px}
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+#app{display:block}
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);z-index:30;
+  border-radius:0;border-left:0;border-top:0;border-bottom:0;
+  display:flex;flex-direction:column;padding:16px 12px 12px;transition:transform .38s var(--spring);
+}
+.sidebar::after{border-radius:0}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px;cursor:pointer;user-select:none}
+.brand svg{width:30px;height:30px;flex:none;filter:drop-shadow(0 6px 16px color-mix(in srgb,var(--accent) 45%,transparent))}
+.brand b{font-size:16.5px;letter-spacing:-.03em;font-weight:670}
+.brand small{display:block;font-size:10.5px;color:var(--text-3);font-weight:500;letter-spacing:.01em;margin-top:-1px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-label{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);padding:14px 10px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:var(--r1);
+  color:var(--text-2);font-size:13.5px;font-weight:520;transition:background .18s,color .18s,transform .18s var(--spring);
+  position:relative;width:100%;text-align:left;
+}
+.nav-item svg{width:17px;height:17px;flex:none;opacity:.85}
+.nav-item:hover{background:rgba(var(--surface-rgb),.06);color:var(--text)}
+.nav-item.active{background:color-mix(in srgb,var(--accent) 17%,transparent);color:var(--text);font-weight:600}
+.nav-item.active svg{opacity:1;color:var(--accent)}
+.nav-item.active::before{
+  content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);
+  width:3px;height:19px;border-radius:0 3px 3px 0;background:linear-gradient(var(--accent),var(--accent-2));
+  box-shadow:0 0 14px var(--accent);
+}
+.nav-item .count{margin-left:auto;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;
+  background:color-mix(in srgb,var(--accent) 26%,transparent);color:var(--text)}
+.nav-spacer{flex:1}
+.side-user{display:flex;align-items:center;gap:10px;padding:9px;border-radius:var(--r2);
+  border:1px solid var(--border);background:rgba(var(--surface-rgb),.035);margin-top:8px;cursor:pointer;
+  transition:background .2s,border-color .2s}
+.side-user:hover{background:rgba(var(--surface-rgb),.07);border-color:var(--border-2)}
+.side-user .who{min-width:0;flex:1}
+.side-user .who b{display:block;font-size:12.5px;font-weight:620;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-user .who span{display:block;font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.main{margin-left:var(--sidebar-w);height:100vh;display:flex;flex-direction:column;position:relative;z-index:2}
+.toolbar{
+  height:var(--toolbar-h);flex:none;display:flex;align-items:center;gap:12px;padding:0 20px;
+  border-radius:0;border-top:0;border-left:0;border-right:0;z-index:20;
+}
+.toolbar::after{border-radius:0}
+.toolbar h2{font-size:16px;font-weight:650;letter-spacing:-.03em}
+.toolbar .sub{font-size:11.5px;color:var(--text-3);margin-top:1px}
+.search{flex:1;max-width:440px;position:relative}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-3);pointer-events:none}
+.search input{
+  width:100%;padding:9px 58px 9px 35px;border-radius:var(--r1);font-size:13px;
+  background:rgba(var(--surface-rgb),.05);border:1px solid var(--border);outline:none;transition:all .22s;
+}
+.search input:focus{border-color:color-mix(in srgb,var(--accent) 60%,transparent);
+  box-shadow:0 0 0 3.5px color-mix(in srgb,var(--accent) 17%,transparent);background:rgba(var(--surface-rgb),.08)}
+.search kbd{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:10px;font-family:inherit;
+  color:var(--text-3);border:1px solid var(--border);padding:2px 6px;border-radius:5px;background:rgba(var(--surface-rgb),.05)}
+.tool-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.icon-btn{
+  width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+  border:1px solid var(--border);background:rgba(var(--surface-rgb),.045);color:var(--text-2);transition:all .2s;
+}
+.icon-btn:hover{background:rgba(var(--surface-rgb),.1);color:var(--text);border-color:var(--border-2)}
+.icon-btn svg{width:16px;height:16px}
+.icon-btn.on{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--text);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.hamburger{display:none}
+
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 20px 80px;scroll-behavior:smooth}
+.wrap{max-width:1340px;margin:0 auto}
+
+/* ============================================================
+   CHIPS / FILTERS
+   ============================================================ */
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.chip{
+  padding:6.5px 13px;border-radius:99px;font-size:12.5px;font-weight:540;
+  border:1px solid var(--border);background:rgba(var(--surface-rgb),.04);color:var(--text-2);
+  transition:all .2s var(--spring);white-space:nowrap;
+}
+.chip:hover{background:rgba(var(--surface-rgb),.09);color:var(--text);transform:translateY(-1px)}
+.chip.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent;font-weight:600;
+  box-shadow:0 8px 22px -10px var(--accent);
+}
+.chip.tag.active{background:color-mix(in srgb,var(--accent) 30%,transparent);color:var(--text);
+  border-color:color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:none}
+.chip.mini{padding:4px 10px;font-size:11px}
+.divider-v{width:1px;height:20px;background:var(--border);margin:0 3px}
+
+/* ============================================================
+   PACK GRID
+   ============================================================ */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:16px}
+.list{display:flex;flex-direction:column;gap:10px}
+.card{
+  border-radius:var(--r3);overflow:hidden;cursor:pointer;position:relative;
+  transition:transform .3s var(--spring),box-shadow .3s;animation:rise .5s var(--spring) both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.card:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 26px 60px -26px rgba(0,0,0,.85),0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent),0 20px 50px -28px var(--accent)}
+.thumb{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0d0d13}
+.thumb .bg{position:absolute;inset:0;transition:transform .55s var(--spring)}
+.card:hover .thumb .bg{transform:scale(1.06)}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumb .fade{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,6,10,.85),transparent 55%)}
+.thumb .badges{position:absolute;top:9px;left:9px;right:9px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.pill{
+  font-size:10px;font-weight:700;letter-spacing:.04em;padding:3.5px 7.5px;border-radius:6px;
+  background:rgba(8,8,12,.72);color:#fff;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);
+  text-transform:uppercase;
+}
+.pill.res{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent}
+.pill.lic{background:rgba(8,8,12,.72);text-transform:none;letter-spacing:0;font-weight:600}
+.health{margin-left:auto;display:flex;gap:3px;padding:4px 7px;border-radius:99px;background:rgba(8,8,12,.72);
+  backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12)}
+.dot{width:5.5px;height:5.5px;border-radius:50%;background:var(--text-3)}
+.dot.ok{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.dot.warn{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+.dot.dead{background:var(--danger)}
+.card-body{padding:12px 13px 14px}
+.credit-pill{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:620;color:var(--accent-2);
+  margin-bottom:6px;max-width:100%;
+}
+.credit-pill svg{width:11px;height:11px;flex:none}
+.credit-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-body h3{font-size:13.5px;font-weight:620;margin-bottom:6px;line-height:1.32;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-.015em}
+.meta{font-size:11.5px;color:var(--text-3);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.meta i{font-style:normal;opacity:.5}
+.fav-btn{position:absolute;bottom:11px;right:11px;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  background:rgba(8,8,12,.7);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);opacity:0;transition:all .22s}
+.card:hover .fav-btn{opacity:1}
+.fav-btn:hover{background:rgba(8,8,12,.9);transform:scale(1.08)}
+.fav-btn svg{width:14px;height:14px;color:#fff}
+.fav-btn.on{opacity:1;color:var(--danger)}
+.fav-btn.on svg{color:var(--danger);fill:var(--danger)}
+
+/* list mode */
+.list .card{display:grid;grid-template-columns:180px 1fr;align-items:center}
+.list .thumb{aspect-ratio:16/9;height:100%}
+.list .card-body{padding:14px 18px}
+.list .fav-btn{position:static;opacity:1;margin-left:auto}
+
+/* ============================================================
+   EMPTY / LOADING
+   ============================================================ */
+.empty{text-align:center;padding:80px 24px;color:var(--text-3);animation:rise .5s var(--spring) both}
+.empty .box{width:78px;height:78px;margin:0 auto 20px;border-radius:22px;display:grid;place-items:center;
+  border:1px dashed var(--border-2);background:rgba(var(--surface-rgb),.03)}
+.empty .box svg{width:34px;height:34px;opacity:.4}
+.empty h3{color:var(--text-2);font-size:16px;margin-bottom:8px;font-weight:600}
+.empty p{font-size:13px;max-width:400px;margin:0 auto 18px;line-height:1.6}
+
+/* ============================================================
+   PANELS / SECTIONS
+   ============================================================ */
+.panel{border-radius:var(--r3);padding:20px}
+.panel + .panel{margin-top:16px}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.sec-head h3{font-size:15px;font-weight:640}
+.sec-head .sp{margin-left:auto;display:flex;gap:8px;align-items:center}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px}
+.kv .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);font-weight:700;margin-bottom:4px}
+.kv .v{font-size:14px;font-weight:600}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.scrim{position:fixed;inset:0;z-index:100;background:rgba(3,3,6,.62);backdrop-filter:blur(9px);
+  display:grid;place-items:center;padding:20px;animation:fade .25s ease both;overflow-y:auto}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  width:100%;max-width:760px;border-radius:var(--r4);overflow:hidden;position:relative;
+  animation:modalIn .42s var(--spring) both;margin:auto;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(16px)}to{opacity:1;transform:none}}
+.modal.sm{max-width:440px}
+.modal.md{max-width:600px}
+.modal-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-head h3{font-size:15px;font-weight:640;flex:1}
+.modal-body{padding:20px;max-height:calc(100vh - 200px);overflow-y:auto}
+
+/* pack quick look */
+.ql-hero{position:relative;aspect-ratio:16/9;background:#0b0b11;overflow:hidden}
+.ql-hero .bg{position:absolute;inset:0}
+.ql-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ql-hero .fade{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,6,10,.94) 6%,transparent 62%)}
+.ql-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;
+  display:grid;place-items:center;background:rgba(255,255,255,.12);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.25);transition:all .25s var(--spring)}
+.ql-play:hover{transform:translate(-50%,-50%) scale(1.1);background:rgba(255,255,255,.2)}
+.ql-play svg{width:20px;height:20px;color:#fff;margin-left:2px}
+.ql-title{position:absolute;left:20px;right:20px;bottom:16px}
+.ql-title h2{font-size:21px;font-weight:670;color:#fff;margin-bottom:7px;letter-spacing:-.03em}
+.ql-actions{display:flex;gap:9px;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.taglist{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+/* ============================================================
+   SHEET (bottom slide-up)
+   ============================================================ */
+.sheet-scrim{position:fixed;inset:0;z-index:110;background:rgba(3,3,6,.55);backdrop-filter:blur(6px);animation:fade .2s both}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:111;max-width:600px;margin:0 auto;
+  border-radius:var(--r4) var(--r4) 0 0;border-bottom:0;padding:10px 22px 28px;
+  animation:sheetUp .48s var(--spring) both;max-height:88vh;overflow-y:auto;
+}
+.sheet::after{border-radius:var(--r4) var(--r4) 0 0}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.sheet-grip{width:38px;height:4.5px;border-radius:99px;background:var(--border-2);margin:0 auto 18px}
+.sheet-credit{display:flex;align-items:center;gap:13px;margin-bottom:18px}
+.sheet-credit .who b{display:block;font-size:14.5px;font-weight:640}
+.sheet-credit .who span{display:block;font-size:12px;color:var(--text-3);margin-top:1px}
+
+/* ============================================================
+   AVATAR
+   ============================================================ */
+.av{border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;flex:none;
+  letter-spacing:-.02em;overflow:hidden;user-select:none;position:relative}
+.av.xs{width:26px;height:26px;font-size:10px}
+.av.sm{width:34px;height:34px;font-size:12px}
+.av.md{width:46px;height:46px;font-size:15px}
+.av.lg{width:112px;height:112px;font-size:38px;box-shadow:0 0 0 4px var(--bg),0 0 0 5.5px var(--border-2),0 22px 55px -18px var(--accent)}
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+.cover{height:172px;border-radius:var(--r3);position:relative;overflow:hidden;margin-bottom:-56px}
+.cover .mesh{position:absolute;inset:0;transition:transform .5s}
+.prof-head{display:flex;align-items:flex-end;gap:18px;padding:0 24px;position:relative;flex-wrap:wrap}
+.prof-id{flex:1;min-width:200px;padding-bottom:6px}
+.prof-id h2{font-size:23px;font-weight:680;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:-.035em}
+.verified{width:17px;height:17px;color:var(--accent-2);filter:drop-shadow(0 0 8px var(--accent-2))}
+.prof-id .handle{color:var(--text-3);font-size:13px;margin-top:3px}
+.prof-id .bio{color:var(--text-2);font-size:13px;margin-top:11px;max-width:560px;line-height:1.6}
+.badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.bdg{font-size:10.5px;font-weight:680;padding:4px 9px;border-radius:99px;border:1px solid var(--border-2);
+  background:rgba(var(--surface-rgb),.05);color:var(--text-2);letter-spacing:.02em}
+.bdg.top{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent}
+.bdg.trusted{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 38%,transparent)}
+.bdg.helper{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 36%,transparent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:1px;border-radius:var(--r2);
+  overflow:hidden;border:1px solid var(--border);background:var(--border);margin-top:20px}
+.stat{background:rgba(var(--surface-rgb),calc(var(--surface-a) * var(--surface-mult) * 1.4));padding:14px 12px;text-align:center}
+.stat b{display:block;font-size:19px;font-weight:700;letter-spacing:-.03em}
+.stat span{display:block;font-size:10.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;font-weight:600}
+.trust{margin-top:16px}
+.trust-head{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-2);margin-bottom:7px;font-weight:560}
+.bar{height:7px;border-radius:99px;background:rgba(var(--surface-rgb),.08);overflow:hidden;position:relative}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  box-shadow:0 0 16px var(--accent);transition:width 1s var(--spring)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-top:22px;overflow-x:auto}
+.tab{padding:10px 15px;font-size:13px;font-weight:560;color:var(--text-3);border-bottom:2px solid transparent;
+  transition:all .2s;white-space:nowrap;margin-bottom:-1px}
+.tab:hover{color:var(--text-2)}
+.tab.active{color:var(--text);border-bottom-color:var(--accent);font-weight:620}
+
+/* ============================================================
+   DRAWER (customize)
+   ============================================================ */
+.drawer-scrim{position:fixed;inset:0;z-index:120;background:rgba(3,3,6,.5);backdrop-filter:blur(6px);animation:fade .2s both}
+.drawer{
+  position:fixed;right:0;top:0;bottom:0;width:400px;max-width:100%;z-index:121;
+  border-radius:0;border-top:0;border-right:0;border-bottom:0;display:flex;flex-direction:column;
+  animation:drawerIn .42s var(--spring) both;
+}
+.drawer::after{border-radius:0}
+@keyframes drawerIn{from{transform:translateX(100%)}to{transform:none}}
+.drawer-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.drawer-body{flex:1;overflow-y:auto;padding:20px}
+.drawer-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:9px}
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.sw{width:36px;height:36px;border-radius:11px;border:2px solid transparent;transition:all .22s var(--spring);position:relative}
+.sw:hover{transform:scale(1.1)}
+.sw.on{border-color:var(--text);box-shadow:0 0 0 3px rgba(var(--surface-rgb),.1)}
+.sw.cover{width:56px;height:38px;border-radius:9px}
+.sw.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+.slider{width:100%;accent-color:var(--accent);height:5px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.toggle-row:last-child{border-bottom:0}
+.switch{width:42px;height:25px;border-radius:99px;background:rgba(var(--surface-rgb),.13);position:relative;
+  transition:background .25s;flex:none;border:1px solid var(--border)}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;
+  transition:transform .28s var(--spring);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.switch.on{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent}
+.switch.on::after{transform:translateX(17px)}
+
+/* ============================================================
+   MIRRORS / REPORTS / LISTS
+   ============================================================ */
+.mirror{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r2);
+  border:1px solid var(--border);background:rgba(var(--surface-rgb),.035);margin-bottom:8px;transition:all .2s}
+.mirror:hover{background:rgba(var(--surface-rgb),.07);border-color:var(--border-2)}
+.mirror .host{font-weight:600;font-size:13.5px}
+.mirror .url{font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+.mirror.dead{opacity:.45}
+.mirror .sp{margin-left:auto;display:flex;gap:7px;align-items:center}
+.status-dot{width:7px;height:7px;border-radius:50%;flex:none}
+
+.comment{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--border)}
+.comment:last-child{border-bottom:0}
+.comment .body{flex:1;min-width:0}
+.comment .body .top{display:flex;gap:8px;align-items:baseline;margin-bottom:3px;flex-wrap:wrap}
+.comment .body .top b{font-size:12.5px;font-weight:630}
+.comment .body .top span{font-size:11px;color:var(--text-3)}
+.comment .body p{font-size:13px;color:var(--text-2);line-height:1.55;word-break:break-word}
+
+.req{display:flex;gap:14px;align-items:flex-start;padding:15px;border-radius:var(--r2);
+  border:1px solid var(--border);background:rgba(var(--surface-rgb),.035);margin-bottom:10px;transition:all .2s}
+.req:hover{border-color:var(--border-2);background:rgba(var(--surface-rgb),.06)}
+.upvote{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 11px;border-radius:10px;
+  border:1px solid var(--border);background:rgba(var(--surface-rgb),.05);transition:all .2s var(--spring);flex:none;min-width:50px}
+.upvote:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent);transform:translateY(-1px)}
+.upvote.on{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.upvote svg{width:13px;height:13px}
+.upvote b{font-size:13px;font-weight:700}
+
+.rowitem{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r2);
+  border:1px solid var(--border);background:rgba(var(--surface-rgb),.03);margin-bottom:8px}
+.rowitem .grow{flex:1;min-width:0}
+.rowitem b{font-size:13px;font-weight:600;display:block}
+.rowitem span{font-size:11.5px;color:var(--text-3)}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toastRoot{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;
+  display:flex;flex-direction:column;gap:9px;align-items:center;pointer-events:none;width:max-content;max-width:92vw}
+.toast{
+  padding:11px 18px;border-radius:var(--r2);font-size:13px;font-weight:540;
+  display:flex;align-items:center;gap:9px;animation:toastIn .38s var(--spring) both;
+  pointer-events:auto;max-width:100%;
+}
+.toast.out{animation:toastOut .3s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(10px) scale(.96)}}
+.toast .ic{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;box-shadow:0 0 10px var(--accent)}
+.toast.ok .ic{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.toast.warn .ic{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+.toast.err .ic{background:var(--danger);box-shadow:0 0 10px var(--danger)}
+
+/* ============================================================
+   MISC
+   ============================================================ */
+.steps{display:flex;gap:6px;margin-bottom:22px}
+.step{flex:1;height:3px;border-radius:99px;background:rgba(var(--surface-rgb),.1);transition:background .3s}
+.step.on{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.notice{border-radius:var(--r2);padding:12px 14px;font-size:12.5px;line-height:1.6;border:1px solid var(--border);
+  background:rgba(var(--surface-rgb),.035);color:var(--text-2);display:flex;gap:10px;align-items:flex-start}
+.notice svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--accent-2)}
+.notice.warn{border-color:color-mix(in srgb,var(--warn) 35%,transparent);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.notice.warn svg{color:var(--warn)}
+.notice.err{border-color:color-mix(in srgb,var(--danger) 35%,transparent);background:color-mix(in srgb,var(--danger) 8%,transparent)}
+.notice.err svg{color:var(--danger)}
+.notice.ok{border-color:color-mix(in srgb,var(--ok) 35%,transparent);background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.notice.ok svg{color:var(--ok)}
+.doc{max-width:760px;font-size:13.5px;line-height:1.72;color:var(--text-2)}
+.doc h2{font-size:20px;color:var(--text);margin:0 0 6px}
+.doc h3{font-size:14.5px;color:var(--text);margin:26px 0 8px;font-weight:640}
+.doc p{margin-bottom:12px}
+.doc ul{margin:0 0 12px;padding-left:20px}
+.doc li{margin-bottom:6px}
+.doc code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+  background:rgba(var(--surface-rgb),.08);padding:2px 6px;border-radius:5px;color:var(--text)}
+.doc pre{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:var(--r2);padding:14px;
+  overflow-x:auto;font-size:11.5px;line-height:1.65;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text-2)}
+[data-theme="light"] .doc pre{background:rgba(0,0,0,.045)}
+details{border:1px solid var(--border);border-radius:var(--r2);padding:0;margin-bottom:10px;overflow:hidden}
+details summary{padding:12px 15px;cursor:pointer;font-size:13px;font-weight:580;list-style:none;display:flex;align-items:center;gap:9px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸";transition:transform .22s;display:inline-block;color:var(--text-3);font-size:11px}
+details[open] summary::before{transform:rotate(90deg)}
+details .dbody{padding:0 15px 15px;border-top:1px solid var(--border);padding-top:14px}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:920px){
+  .sidebar{transform:translateX(-100%);box-shadow:none}
+  .sidebar.open{transform:none;box-shadow:0 0 90px rgba(0,0,0,.75)}
+  .main{margin-left:0}
+  .hamburger{display:grid}
+  .content{padding:16px 14px 90px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+  .list .card{grid-template-columns:120px 1fr}
+  .drawer{width:100%}
+  .ql-title h2{font-size:17px}
+  .cover{height:130px;margin-bottom:-46px}
+  .av.lg{width:88px;height:88px;font-size:30px}
+  .prof-head{padding:0 16px}
+  .search kbd{display:none}
+  .search input{padding-right:14px}
+}
+@media(max-width:520px){
+  .modal-body{padding:16px}
+  .ql-actions{padding:12px 16px}
+  .toolbar{padding:0 12px;gap:8px}
+  .toolbar h2{font-size:14.5px}
+  .toolbar .sub{display:none}
+  .wpanel{padding:30px 22px 20px}
+  .wpanel h1{font-size:28px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<div class="atmos">
+  <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+</div>
+<div class="grain"></div>
+<div class="vig"></div>
+
+<!-- ============================ WELCOME ============================ -->
+<div id="welcome" class="screen">
+  <div class="floaters" id="floaters"></div>
+  <div class="wpanel glass">
+    <div class="logo-wrap">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/>
+          </linearGradient>
+          <radialGradient id="ig1" cx="50%" cy="30%" r="70%">
+            <stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#lg1)"/>
+        <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#ig1)"/>
+        <rect x="4.9" y="4.9" width="54.2" height="54.2" rx="17.1" fill="none" stroke="rgba(255,255,255,.34)" stroke-width="1.8"/>
+      </svg>
+    </div>
+    <h1>ScareBox</h1>
+    <p class="tagline">The community scenepack archive.</p>
+
+    <div id="authArea"></div>
+
+    <div class="rules">
+      <b>Community rules</b>
+      <ul>
+        <li>Credit the creator. Every pack is bound to its uploader's handle.</li>
+        <li>Never re-upload someone else's pack as your own.</li>
+        <li>Provide multiple mirrors. Links die — redundancy keeps the archive alive.</li>
+        <li>720p minimum. No cam rips, no watermarked junk.</li>
+        <li>No malware, no stolen accounts, no scraped personal content.</li>
+        <li>Report dead links instead of complaining. Helpers get badges.</li>
+      </ul>
+    </div>
+
+    <label class="agree">
+      <input type="checkbox" id="agreeBox">
+      <span>I'll credit creators when I use their packs, and I understand ScareBox is an index — files live on the contributor's own storage.</span>
+    </label>
+
+    <div class="wfoot">
+      <button data-action="page" data-slug="terms">Terms</button>
+      <button data-action="page" data-slug="privacy">Privacy</button>
+      <button data-action="page" data-slug="dmca">DMCA</button>
+      <button data-action="page" data-slug="guide">Guide</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ APP ============================ -->
+<div id="app" class="screen hidden">
+  <aside class="sidebar glass" id="sidebar"></aside>
+  <main class="main">
+    <header class="toolbar glass" id="toolbar"></header>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<div id="modalRoot"></div>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+"use strict";
+/* ============================================================================
+   SCAREBOX — APPLICATION
+   Architecture: index-not-host. ScareBox stores metadata + mirror links.
+   Storage: localStorage (client-side). See Admin → Backend for the SQL schema
+   to move this to Supabase for a real multi-user deployment.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- UTIL ---- */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID()
+  : 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+function nf(n){ n = +n || 0;
+  if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'') + 'k';
+  return String(n);
+}
+function ago(ts){
+  const d = Date.now() - ts, m = 6e4, h = 36e5, dy = 864e5;
+  if (d < m) return 'just now';
+  if (d < h) return Math.floor(d/m) + 'm ago';
+  if (d < dy) return Math.floor(d/h) + 'h ago';
+  if (d < dy*30) return Math.floor(d/dy) + 'd ago';
+  if (d < dy*365) return Math.floor(d/dy/30) + 'mo ago';
+  return Math.floor(d/dy/365) + 'y ago';
+}
+function hashStr(s){ let h = 2166136261;
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+/* deterministic mesh gradient for a pack thumbnail */
+function meshFor(seed){
+  const h = hashStr(seed), a = h % 360, b = (a + 47 + (h >> 3) % 90) % 360;
+  return `radial-gradient(120% 110% at 18% 8%, hsl(${a} 82% 46% / .72), transparent 58%),` +
+         `radial-gradient(120% 110% at 86% 92%, hsl(${b} 86% 52% / .62), transparent 60%),` +
+         `linear-gradient(158deg,#15151f,#08080d)`;
+}
+function meshPreset(i){
+  const P = [
+    'radial-gradient(120% 130% at 12% 10%, #8B6DFF 0%, transparent 58%), radial-gradient(120% 130% at 88% 92%, #5B8CFF 0%, transparent 58%), linear-gradient(158deg,#181826,#0a0a12)',
+    'radial-gradient(120% 130% at 15% 12%, #FF6B9D 0%, transparent 58%), radial-gradient(120% 130% at 85% 90%, #FF8A5B 0%, transparent 58%), linear-gradient(158deg,#241620,#120a10)',
+    'radial-gradient(120% 130% at 15% 12%, #30D158 0%, transparent 58%), radial-gradient(120% 130% at 85% 90%, #5BE7C4 0%, transparent 58%), linear-gradient(158deg,#102019,#08120f)',
+    'radial-gradient(120% 130% at 15% 12%, #FFD60A 0%, transparent 58%), radial-gradient(120% 130% at 85% 90%, #FF9F0A 0%, transparent 58%), linear-gradient(158deg,#231b0c,#120e06)',
+    'radial-gradient(120% 130% at 15% 12%, #FF453A 0%, transparent 58%), radial-gradient(120% 130% at 85% 90%, #FF6B6B 0%, transparent 58%), linear-gradient(158deg,#241110,#120808)',
+    'radial-gradient(120% 130% at 15% 12%, #5BE7FF 0%, transparent 58%), radial-gradient(120% 130% at 85% 90%, #5B8CFF 0%, transparent 58%), linear-gradient(158deg,#0d1a22,#060f14)'
+  ];
+  return P[i % P.length];
+}
+const ACCENTS = [
+  ['#8B6DFF','#5B8CFF'], ['#FF6B9D','#FF8A5B'], ['#30D158','#5BE7C4'], ['#FFD60A','#FF9F0A'],
+  ['#FF453A','#FF6B6B'], ['#5BE7FF','#5B8CFF'], ['#C77DFF','#FF6B9D'], ['#94A3B8','#64748B']
+];
+const AVATAR_GRADS = [
+  'linear-gradient(135deg,#8B6DFF,#5B8CFF)', 'linear-gradient(135deg,#FF6B9D,#FF8A5B)',
+  'linear-gradient(135deg,#30D158,#5BE7C4)', 'linear-gradient(135deg,#FFD60A,#FF9F0A)',
+  'linear-gradient(135deg,#FF453A,#FF6B6B)', 'linear-gradient(135deg,#5BE7FF,#5B8CFF)',
+  'linear-gradient(135deg,#C77DFF,#FF6B9D)', 'linear-gradient(135deg,#94A3B8,#475569)'
+];
+const CATEGORIES = ['Movies','Anime','TV Shows','Celebrities','Music','Influencers'];
+const TAGS = ['4K','1080p','Green Screen','Aesthetic','Sad','Action','Romance','Horror','Slow Motion','Transition','Vintage','Textless'];
+const LICENSES = { credit_required:'Credit Required', free_use:'Free to Use', no_reupload:'No Reupload' };
+const RES = ['720p','1080p','4K'];
+
+/* --------------------------------------------------------------- ICONS ---- */
+const I = {
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 019.5 4 8.5 8.5 0 1020 14.5z"/></svg>',
+  box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>',
+  upload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7.5 8.5L12 4l4.5 4.5"/><path d="M4 16v2.5A1.5 1.5 0 005.5 20h13a1.5 1.5 0 001.5-1.5V16"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0115 0"/></svg>',
+  board:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7.5 9h9M7.5 13h6"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v6c0 4.4-3.1 8.3-7.5 9.5C7.6 20.3 4.5 16.4 4.5 12V6L12 3z"/></svg>',
+  cog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H3a2 2 0 110-4h.1a1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H10a1.6 1.6 0 001-1.5V3a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V10a1.6 1.6 0 001.5 1H21a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-9.2A4.3 4.3 0 0112 8a4.3 4.3 0 017 2.8C19 15.6 12 20 12 20z"/></svg>',
+  download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 17v1.5A1.5 1.5 0 005.5 20h13a1.5 1.5 0 001.5-1.5V17"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M6 15H5.5A2.5 2.5 0 013 12.5v-7A2.5 2.5 0 015.5 3h7A2.5 2.5 0 0115 5.5V6"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h11l-2 4 2 4H5"/></svg>',
+  close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>',
+  verified:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.6l2.6 2 3.3-.4 1.4 3 2.9 1.6-1 3.2 1 3.2-2.9 1.6-1.4 3-3.3-.4-2.6 2-2.6-2-3.3.4-1.4-3L1.8 14.6l1-3.2-1-3.2 2.9-1.6 1.4-3 3.3.4z"/><path d="M8.2 12.2l2.6 2.6 5-5.4" stroke="#06060A" stroke-width="2.1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.4"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5L21 19H3z"/><path d="M12 10v4M12 16.6v.3"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  arrowUp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
+  link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13.5a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10.5a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg>'
+};
+
+/* ----------------------------------------------------------------- DB ----- */
+const DB_KEY = 'scarebox.db.v1';
+const THEME_KEY = 'scarebox.theme';
+
+function blankDB(){
+  return { users: [], packs: [], reports: [], requests: [], favorites: [],
+           comments: [], follows: [], downloads: [], votes: [], session: null, v: 1 };
+}
+let DB = blankDB();
+
+function loadDB(){
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) DB = Object.assign(blankDB(), JSON.parse(raw));
+  } catch (e) { console.warn('DB load failed, starting fresh', e); DB = blankDB(); }
+}
+function persist(){
+  try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); }
+  catch (e) { toast('Storage full — could not save.', 'err'); }
+}
+
+/* ---------------------------------------------------------------- AUTH ---- */
+function bufToHex(buf){
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function hexToBuf(hex){
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i*2, 2), 16);
+  return out;
+}
+async function hashPassword(pw, saltHex){
+  const enc = new TextEncoder();
+  if (window.crypto && crypto.subtle){
+    const salt = saltHex ? hexToBuf(saltHex) : crypto.getRandomValues(new Uint8Array(16));
+    const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name:'PBKDF2', salt, iterations: 150000, hash:'SHA-256' }, key, 256);
+    return { salt: bufToHex(salt), hash: bufToHex(bits) };
+  }
+  /* fallback for non-secure contexts — weaker, but the app still functions */
+  const salt = saltHex || Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let h = 0; const s = salt + '|' + pw;
+  for (let i = 0; i < s.length; i++){ h = (Math.imul(31, h) + s.charCodeAt(i)) | 0; }
+  return { salt, hash: 'fb_' + (h >>> 0).toString(16) };
+}
+
+/* ---------------------------------------------------------------- STATE --- */
+const S = {
+  view: 'library',
+  filter: { q: '', category: 'All', tag: 'All', sort: 'recent' },
+  viewMode: 'grid',
+  currentPack: null,
+  profileTab: 'uploads',
+  profileUser: null,
+  pageSlug: null,
+  upload: null,
+  authMode: 'choose',
+  drawer: false,
+  sidebarOpen: false
+};
+
+/* --------------------------------------------------------------- ACCESS --- */
+const RANK = { visitor:0, member:1, contributor:2, trusted:3, mod:4, admin:5 };
+function currentUser(){
+  if (!DB.session || DB.session.id === 'guest') return null;
+  return DB.users.find(u => u.id === DB.session.id) || null;
+}
+function isGuest(){ return !!DB.session && DB.session.id === 'guest'; }
+function isAuthed(){ return !!currentUser(); }
+function roleOf(u){ return u ? (u.role || 'member') : 'visitor'; }
+function can(action){
+  const r = RANK[roleOf(currentUser())] || 0;
+  switch (action){
+    case 'favorite': case 'comment': case 'request': return r >= 1;
+    case 'upload': return r >= 2;
+    case 'moderate': return r >= 4;
+    case 'admin': return r >= 5;
+    default: return true;
+  }
+}
+function requireAuth(what){
+  if (isAuthed()) return true;
+  if (isGuest()) { toast('Create a free account to ' + what + '.', 'warn'); openAuthModal(); }
+  else { toast('Sign in to ' + what + '.', 'warn'); }
+  return false;
+}
+
+/* ------------------------------------------------------------ USER PREFS -- */
+function applyTheme(){
+  const theme = localStorage.getItem(THEME_KEY) || 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+}
+function toggleTheme(){
+  const next = (localStorage.getItem(THEME_KEY) || 'dark') === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme();
+  render();
+}
+function applyAppearance(){
+  const u = currentUser();
+  const root = document.documentElement;
+  const accent = ACCENTS[(u && u.accent_idx) || 0] || ACCENTS[0];
+  root.style.setProperty('--accent', accent[0]);
+  root.style.setProperty('--accent-2', accent[1]);
+  root.style.setProperty('--blur', ((u && u.blur != null ? u.blur : 34)) + 'px');
+  const alpha = (u && u.alpha != null ? u.alpha : 5.5) / 100;
+  root.style.setProperty('--surface-a', String(alpha));
+}
+
+/* --------------------------------------------------------------- TOASTS --- */
+function toast(msg, kind){
+  const el = document.createElement('div');
+  el.className = 'toast glass' + (kind ? ' ' + kind : '');
+  el.innerHTML = '<span class="ic"></span><span>' + esc(msg) + '</span>';
+  $('#toastRoot').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, 3200);
+}
+
+/* --------------------------------------------------------------- MODALS --- */
+function openModal(html, size){
+  closeModal();
+  const scrim = document.createElement('div');
+  scrim.className = 'scrim';
+  scrim.dataset.modalScrim = '1';
+  scrim.innerHTML = '<div class="modal glass ' + (size || '') + '">' + html + '</div>';
+  scrim.addEventListener('mousedown', e => { if (e.target === scrim) closeModal(); });
+  $('#modalRoot').appendChild(scrim);
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(){
+  $$('#modalRoot .scrim').forEach(n => n.remove());
+  document.body.style.overflow = '';
+}
+function openSheet(html){
+  closeSheet();
+  const scrim = document.createElement('div');
+  scrim.className = 'sheet-scrim'; scrim.dataset.sheetScrim = '1';
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet glass';
+  sheet.innerHTML = '<div class="sheet-grip"></div>' + html;
+  scrim.addEventListener('click', closeSheet);
+  $('#sheetRoot').appendChild(scrim);
+  $('#sheetRoot').appendChild(sheet);
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet(){
+  $$('#sheetRoot > *').forEach(n => n.remove());
+  document.body.style.overflow = '';
+}
+function openDrawer(html){
+  closeDrawer();
+  const scrim = document.createElement('div');
+  scrim.className = 'drawer-scrim'; scrim.dataset.drawerScrim = '1';
+  scrim.addEventListener('click', closeDrawer);
+  const d = document.createElement('div');
+  d.className = 'drawer glass';
+  d.innerHTML = html;
+  $('#modalRoot').appendChild(scrim);
+  $('#modalRoot').appendChild(d);
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer(){
+  $$('#modalRoot > .drawer, #modalRoot > .drawer-scrim').forEach(n => n.remove());
+  document.body.style.overflow = '';
+}
+
+/* -------------------------------------------------------------- HELPERS --- */
+function avatarHTML(user, size, extraStyle){
+  if (!user) return '<div class="av ' + size + '" style="background:' + AVATAR_GRADS[0] + '">?</div>';
+  const initials = (user.initials || (user.display_name || user.handle || '?').slice(0,2)).toUpperCase();
+  const bg = AVATAR_GRADS[(user.avatar_idx || 0) % AVATAR_GRADS.length];
+  return '<div class="av ' + size + '" style="background:' + bg + ';' + (extraStyle || '') + '">' + esc(initials) + '</div>';
+}
+function healthDots(mirrors){
+  const list = (mirrors || []).slice(0, 4);
+  if (!list.length) return '<span class="dot dead"></span>';
+  return list.map(m => '<span class="dot ' + (m.status === 'ok' ? 'ok' : m.status === 'warn' ? 'warn' : 'dead') + '"></span>').join('');
+}
+function packHealth(p){
+  const ms = p.mirrors || [];
+  if (!ms.length) return 'dead';
+  if (ms.some(m => m.status === 'ok')) return 'ok';
+  if (ms.some(m => m.status === 'warn')) return 'warn';
+  return 'dead';
+}
+function userByHandle(h){ return DB.users.find(u => u.handle.toLowerCase() === String(h || '').toLowerCase()); }
+function userById(id){ return DB.users.find(u => u.id === id); }
+function approvedPacks(){ return DB.packs.filter(p => p.status === 'approved'); }
+function packFavCount(id){ return DB.favorites.filter(f => f.pack_id === id).length; }
+function isFav(id){ const u = currentUser(); return !!u && DB.favorites.some(f => f.pack_id === id && f.user_id === u.id); }
+function commentCount(id){ return DB.comments.filter(c => c.pack_id === id).length; }
+function userUploads(id){ return DB.packs.filter(p => p.owner_id === id); }
+function trustProgress(u){
+  const t = u.trust_score || 0;
+  if (t >= 90) return { label: 'Elite', next: 100, pct: 100 };
+  if (t >= 60) return { label: 'Trusted', next: 90, pct: t };
+  if (t >= 25) return { label: 'Contributor', next: 60, pct: t };
+  return { label: 'New', next: 25, pct: t };
+}
+function recomputeTrust(u){
+  const packs = userUploads(u.id);
+  const approved = packs.filter(p => p.status === 'approved').length;
+  const downloads = packs.reduce((a, p) => a + (p.download_count || 0), 0);
+  const restored = DB.packs.filter(p => (p.restorers || []).includes(u.id)).length;
+  let score = Math.min(60, approved * 6) + Math.min(25, Math.floor(downloads / 40)) + Math.min(15, restored * 5);
+  u.trust_score = Math.max(0, Math.min(100, score));
+  if (u.trust_score >= 60 && RANK[u.role] < 3) u.role = 'trusted';
+  if (u.trust_score >= 60) u.badges = Object.assign({}, u.badges, { trusted: true });
+  if (approved >= 10) u.badges = Object.assign({}, u.badges, { top: true });
+  if (restored >= 3) u.badges = Object.assign({}, u.badges, { helper: true });
+}
+
+/* ============================================================ WELCOME ==== */
+function renderWelcome(){
+  const area = $('#authArea');
+  if (S.authMode === 'choose'){
+    area.innerHTML =
+      '<button class="btn primary block" data-action="auth-mode" data-mode="signup" style="margin-bottom:9px">Create a free account</button>' +
+      '<button class="btn block" data-action="auth-mode" data-mode="signin" style="margin-bottom:9px">Sign in</button>' +
+      '<button class="btn ghost block" data-action="guest-enter">Browse first</button>';
+  } else if (S.authMode === 'signup'){
+    area.innerHTML =
+      '<div class="field"><label>Display name</label><input class="input" id="suName" placeholder="Aziz" autocomplete="name"></div>' +
+      '<div class="field"><label>TikTok handle</label><input class="input" id="suHandle" placeholder="azizedit" autocomplete="username"><div class="hint">Your credit handle. It is bound to your account and shown on every pack you upload.</div></div>' +
+      '<div class="field"><label>Email</label><input class="input" id="suEmail" type="email" placeholder="you@example.com" autocomplete="email"></div>' +
+      '<div class="field"><label>Password</label><input class="input" id="suPass" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>' +
+      '<div id="suErr"></div>' +
+      '<button class="btn primary block" data-action="signup" style="margin-top:6px">Create account</button>' +
+      '<button class="btn ghost block" data-action="auth-mode" data-mode="choose" style="margin-top:8px">Back</button>';
+  } else {
+    area.innerHTML =
+      '<div class="field"><label>Handle or email</label><input class="input" id="siId" placeholder="azizedit" autocomplete="username"></div>' +
+      '<div class="field"><label>Password</label><input class="input" id="siPass" type="password" placeholder="Your password" autocomplete="current-password"></div>' +
+      '<div id="siErr"></div>' +
+      '<button class="btn primary block" data-action="signin" style="margin-top:6px">Sign in</button>' +
+      '<button class="btn ghost block" data-action="auth-mode" data-mode="choose" style="margin-top:8px">Back</button>';
+  }
+}
+function renderFloaters(){
+  const host = $('#floaters');
+  if (host.dataset.done) return;
+  host.dataset.done = '1';
+  const seeds = ['A','B','C','D','E','F','G','H','I','J'];
+  let html = '';
+  for (let i = 0; i < 10; i++){
+    const w = 130 + (i % 4) * 42, h = Math.round(w * 0.6);
+    const left = (i * 11.3 + (i % 3) * 5) % 92;
+    const top = (i * 9.7 + (i % 4) * 8) % 82;
+    const rot = ((i * 37) % 26) - 13;
+    html += '<span style="width:' + w + 'px;height:' + h + 'px;left:' + left + '%;top:' + top + '%;' +
+            '--rot:' + rot + 'deg;background:' + meshFor('float' + seeds[i]) + ';' +
+            'animation-delay:' + (i * 0.7) + 's;opacity:' + (0.18 + (i % 3) * 0.08) + '"></span>';
+  }
+  host.innerHTML = html;
+}
+
+/* ============================================================ SIDEBAR ==== */
+function renderSidebar(){
+  const u = currentUser();
+  const pending = DB.packs.filter(p => p.status === 'pending').length;
+  const openReports = DB.reports.filter(r => r.status === 'open').length;
+  const modCount = pending + openReports;
+
+  let html =
+    '<div class="brand" data-action="nav" data-view="library">' +
+      '<svg viewBox="0 0 64 64"><defs>' +
+        '<linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient>' +
+        '<radialGradient id="ig2" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+      '</defs><rect x="4" y="4" width="56" height="56" rx="18" fill="url(#lg2)"/>' +
+      '<rect x="4" y="4" width="56" height="56" rx="18" fill="url(#ig2)"/>' +
+      '<rect x="4.9" y="4.9" width="54.2" height="54.2" rx="17.1" fill="none" stroke="rgba(255,255,255,.34)" stroke-width="1.8"/></svg>' +
+      '<div><b>ScareBox</b><small>scenepack archive</small></div>' +
+    '</div>' +
+    '<nav class="nav">' +
+      '<div class="nav-label">Browse</div>' +
+      navItem('library', I.home, 'Library', S.view === 'library') +
+      navItem('requests', I.board, 'Requests', S.view === 'requests') +
+      '<div class="nav-label">Create</div>' +
+      navItem('upload', I.upload, 'Upload a pack', S.view === 'upload') +
+      navItem('profile', I.user, 'My Box', S.view === 'profile') +
+      '<div class="nav-label">Manage</div>';
+
+  if (can('moderate')){
+    html += navItem('admin', I.shield, 'Admin', S.view === 'admin', modCount || '');
+  }
+  html += '<button class="nav-item" data-action="open-drawer">' + I.cog + '<span>Customize</span></button>';
+  html += '</nav><div class="nav-spacer"></div>';
+
+  if (u){
+    html +=
+      '<div class="side-user" data-action="nav" data-view="profile">' +
+        avatarHTML(u, 'sm') +
+        '<div class="who"><b>' + esc(u.display_name) + '</b><span>@' + esc(u.handle) + ' · ' + esc(roleOf(u)) + '</span></div>' +
+      '</div>' +
+      '<button class="nav-item" data-action="signout" style="margin-top:4px">' + I.close + '<span>Sign out</span></button>';
+  } else if (isGuest()){
+    html +=
+      '<div class="side-user" data-action="open-auth">' +
+        '<div class="av sm" style="background:' + AVATAR_GRADS[7] + '">?</div>' +
+        '<div class="who"><b>Guest</b><span>Browsing without an account</span></div>' +
+      '</div>' +
+      '<button class="nav-item" data-action="open-auth" style="margin-top:4px">' + I.user + '<span>Create account</span></button>';
+  }
+
+  $('#sidebar').innerHTML = html;
+}
+function navItem(view, icon, label, active, count){
+  return '<button class="nav-item' + (active ? ' active' : '') + '" data-action="nav" data-view="' + view + '">' +
+    icon + '<span>' + label + '</span>' +
+    (count ? '<span class="count">' + count + '</span>' : '') + '</button>';
+}
+
+/* ============================================================ TOOLBAR ==== */
+function renderToolbar(){
+  const titles = {
+    library: ['Library', approvedPacks().length + ' packs indexed'],
+    requests: ['Requests', 'Ask the community for a pack'],
+    upload: ['Upload', 'Donate a pack to the archive'],
+    profile: ['My Box', 'Your packs, favorites and stats'],
+    admin: ['Admin', 'Moderation and configuration'],
+    page: ['Document', '']
+  };
+  const t = titles[S.view] || ['', ''];
+  const theme = localStorage.getItem(THEME_KEY) || 'dark';
+
+  let search = '';
+  if (S.view === 'library'){
+    search = '<div class="search">' + I.search +
+      '<input id="q" placeholder="Search packs, movies, creators…" value="' + esc(S.filter.q) + '" autocomplete="off">' +
+      '<kbd>⌘K</kbd></div>';
+  }
+
+  $('#toolbar').innerHTML =
+    '<button class="icon-btn hamburger" data-action="toggle-sidebar">' + I.menu + '</button>' +
+    '<div><h2>' + esc(t[0]) + '</h2><div class="sub">' + esc(t[1]) + '</div></div>' +
+    (S.view === 'library' ? '<div style="flex:1;display:flex;justify-content:center">' + search + '</div>' : '<div style="flex:1"></div>') +
+    '<div class="tool-right">' +
+      (S.view === 'library'
+        ? '<button class="icon-btn' + (S.viewMode === 'grid' ? ' on' : '') + '" data-action="view-mode" data-mode="grid" title="Grid">' + I.grid + '</button>' +
+          '<button class="icon-btn' + (S.viewMode === 'list' ? ' on' : '') + '" data-action="view-mode" data-mode="list" title="List">' + I.list + '</button>'
+        : '') +
+      '<button class="icon-btn" data-action="theme" title="Toggle theme">' + (theme === 'dark' ? I.sun : I.moon) + '</button>' +
+      (isAuthed()
+        ? '<button class="icon-btn" data-action="nav" data-view="profile" title="Profile">' + avatarHTML(currentUser(), 'xs', 'border:none;box-shadow:none') + '</button>'
+        : '<button class="btn sm primary" data-action="open-auth">Sign in</button>') +
+    '</div>';
+
+  const q = $('#q');
+  if (q){
+    q.addEventListener('input', e => { S.filter.q = e.target.value; renderGrid(); });
+  }
+}
+
+/* ============================================================ VIEWS ====== */
+function render(){
+  const authed = isAuthed() || isGuest();
+  $('#welcome').classList.toggle('hidden', authed);
+  $('#app').classList.toggle('hidden', !authed);
+  if (!authed){ renderWelcome(); renderFloaters(); return; }
+
+  applyAppearance();
+  renderSidebar();
+  renderToolbar();
+  renderView();
+}
+
+function renderView(){
+  const c = $('#content');
+  switch (S.view){
+    case 'library':  c.innerHTML = viewLibrary();  break;
+    case 'requests': c.innerHTML = viewRequests(); break;
+    case 'upload':   c.innerHTML = viewUpload();   break;
+    case 'profile':  c.innerHTML = viewProfile();  break;
+    case 'admin':    c.innerHTML = can('moderate') ? viewAdmin() : viewDenied(); break;
+    case 'page':     c.innerHTML = viewPage();     break;
+    default:         c.innerHTML = viewLibrary();
+  }
+  c.scrollTop = 0;
+}
+
+/* ------------------------------------------------------------- LIBRARY --- */
+function viewLibrary(){
+  const tags = ['All'].concat(TAGS.slice(0, 8));
+  let html = '<div class="wrap">';
+  html += '<div class="chiprow">' +
+    ['All'].concat(CATEGORIES).map(cat =>
+      '<button class="chip' + (S.filter.category === cat ? ' active' : '') + '" data-action="filter-cat" data-cat="' + esc(cat) + '">' + esc(cat) + '</button>'
+    ).join('') +
+    '<div class="divider-v"></div>' +
+    '<select class="input" style="width:auto;padding:6px 30px 6px 11px;font-size:12.5px" data-action="sort">' +
+      ['recent','popular','title','downloads'].map(s =>
+        '<option value="' + s + '"' + (S.filter.sort === s ? ' selected' : '') + '>' +
+        ({ recent:'Newest', popular:'Most favorited', title:'A–Z', downloads:'Most downloaded' })[s] + '</option>').join('') +
+    '</select>' +
+  '</div>';
+
+  html += '<div class="chiprow">' +
+    tags.map(t =>
+      '<button class="chip tag' + (S.filter.tag === t ? ' active' : '') + '" data-action="filter-tag" data-tag="' + esc(t) + '">' + esc(t) + '</button>'
+    ).join('') +
+  '</div>';
+
+  html += '<div id="packGrid">' + gridHTML() + '</div></div>';
+  return html;
+}
+
+function filteredPacks(){
+  let list = approvedPacks();
+  const f = S.filter;
+  if (f.category !== 'All') list = list.filter(p => p.category === f.category);
+  if (f.tag !== 'All') list = list.filter(p => (p.tags || []).includes(f.tag));
+  if (f.q){
+    const q = f.q.toLowerCase();
+    const owners = DB.users.filter(u =>
+      u.handle.toLowerCase().includes(q) || (u.display_name || '').toLowerCase().includes(q)
+    ).map(u => u.id);
+    list = list.filter(p =>
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.source || '').toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q) ||
+      (p.category || '').toLowerCase().includes(q) ||
+      (p.tags || []).some(t => t.toLowerCase().includes(q)) ||
+      owners.includes(p.owner_id)
+    );
+  }
+  const s = f.sort;
+  list = list.slice().sort((a, b) => {
+    if (s === 'recent') return (b.created_at || 0) - (a.created_at || 0);
+    if (s === 'popular') return packFavCount(b.id) - packFavCount(a.id);
+    if (s === 'downloads') return (b.download_count || 0) - (a.download_count || 0);
+    return (a.title || '').localeCompare(b.title || '');
+  });
+  return list;
+}
+
+function gridHTML(){
+  const list = filteredPacks();
+  if (!list.length){
+    const hasAny = approvedPacks().length > 0;
+    return '<div class="empty"><div class="box">' + I.box + '</div>' +
+      '<h3>' + (hasAny ? 'Nothing matches that.' : 'Nothing in this Box yet.') + '</h3>' +
+      '<p>' + (hasAny
+        ? 'Try a different search, category, or tag.'
+        : 'The archive is empty. Be the first to donate a scenepack — your credit stays attached to it forever.') + '</p>' +
+      (hasAny
+        ? '<button class="btn" data-action="clear-filters">Clear filters</button>'
+        : '<button class="btn primary" data-action="nav" data-view="upload">Upload the first pack</button>') +
+      '</div>';
+  }
+  return '<div class="' + (S.viewMode === 'grid' ? 'grid' : 'list') + '">' + list.map(cardHTML).join('') + '</div>';
+}
+function renderGrid(){
+  const g = $('#packGrid');
+  if (g) g.innerHTML = gridHTML();
+}
+
+function cardHTML(p){
+  const owner = userById(p.owner_id);
+  const handle = owner ? owner.handle : 'unknown';
+  const bg = p.preview_url
+    ? '<img src="' + esc(p.preview_url) + '" alt="" loading="lazy" onerror="this.remove()">'
+    : '';
+  const faved = isFav(p.id);
+  return '<article class="card glass" data-action="open-pack" data-id="' + p.id + '">' +
+    '<div class="thumb">' +
+      '<div class="bg" style="background:' + meshFor(p.id + p.title) + '"></div>' + bg +
+      '<div class="fade"></div>' +
+      '<div class="badges">' +
+        '<span class="pill res">' + esc(p.res || '1080p') + '</span>' +
+        (p.license && p.license !== 'credit_required'
+          ? '<span class="pill lic">' + esc(LICENSES[p.license] || '') + '</span>' : '') +
+        '<span class="health">' + healthDots(p.mirrors) + '</span>' +
+      '</div>' +
+      '<button class="fav-btn' + (faved ? ' on' : '') + '" data-action="toggle-fav" data-id="' + p.id + '" title="Favorite">' + I.heart + '</button>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<div class="credit-pill">' + I.verified + '<span>@' + esc(handle) + '</span></div>' +
+      '<h3>' + esc(p.title) + '</h3>' +
+      '<div class="meta">' +
+        '<span>' + esc(p.category) + '</span><i>·</i>' +
+        '<span>' + esc(p.size || '—') + '</span><i>·</i>' +
+        '<span>' + nf(p.download_count || 0) + ' downloads</span>' +
+      '</div>' +
+    '</div>' +
+  '</article>';
+}
+
+/* ------------------------------------------------------------ PACK MODAL - */
+function openPack(id){
+  const p = DB.packs.find(x => x.id === id);
+  if (!p) return;
+  S.currentPack = id;
+  const owner = userById(p.owner_id);
+  const handle = owner ? owner.handle : 'unknown';
+  const health = packHealth(p);
+
+  const html =
+    '<div class="ql-hero">' +
+      '<div class="bg" style="background:' + meshFor(p.id + p.title) + '"></div>' +
+      (p.preview_url ? '<img src="' + esc(p.preview_url) + '" alt="" onerror="this.remove()">' : '') +
+      '<div class="fade"></div>' +
+      '<button class="ql-play" data-action="noop" title="Preview">' + I.play + '</button>' +
+      '<div class="ql-title">' +
+        '<h2>' + esc(p.title) + '</h2>' +
+        '<div class="credit-pill" style="color:#fff;opacity:.92;margin:0">' + I.verified +
+          '<span>Scenepack by @' + esc(handle) + '</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="ql-actions">' +
+      '<button class="btn primary" data-action="download-open" data-id="' + p.id + '">' + I.download + ' Download</button>' +
+      '<button class="btn" data-action="copy-credit" data-id="' + p.id + '">' + I.copy + ' Copy Credit</button>' +
+      '<button class="btn' + (isFav(p.id) ? ' danger' : '') + '" data-action="toggle-fav" data-id="' + p.id + '">' + I.heart +
+        (isFav(p.id) ? ' Favorited' : ' Favorite') + '</button>' +
+      '<button class="btn" data-action="report-open" data-id="' + p.id + '">' + I.flag + ' Report</button>' +
+      '<button class="btn ghost" style="margin-left:auto" data-action="close-modal">' + I.close + '</button>' +
+    '</div>' +
+    '<div class="modal-body">' +
+      '<div class="kv" style="margin-bottom:18px">' +
+        kv('Resolution', p.res || '—') + kv('File size', p.size || '—') +
+        kv('Clips', p.clips ? nf(p.clips) : '—') + kv('Format', p.format || '—') +
+        kv('Category', p.category) + kv('Mirrors', (p.mirrors || []).length) +
+      '</div>' +
+      (p.source ? '<div class="sec-head"><h3>Source</h3></div><p style="font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:16px">' + esc(p.source) + '</p>' : '') +
+      (p.description ? '<div class="sec-head"><h3>Description</h3></div><p style="font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:16px">' + esc(p.description) + '</p>' : '') +
+      ((p.tags || []).length
+        ? '<div class="sec-head"><h3>Tags</h3></div><div class="taglist" style="margin-bottom:18px">' +
+          p.tags.map(t => '<span class="chip tag mini">' + esc(t) + '</span>').join('') + '</div>' : '') +
+      '<div class="sec-head"><h3>License</h3><div class="sp">' +
+        '<span class="pill lic" style="background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--text);border-color:transparent">' +
+        esc(LICENSES[p.license] || 'Credit Required') + '</span></div></div>' +
+      '<div class="notice" style="margin-bottom:18px">' + I.info +
+        '<div>Credit is required on every pack. Copy the credit text and paste it in your caption or pinned comment. ' +
+        'ScareBox enforces credit on-site — the rest is community honour.</div></div>' +
+      '<div class="sec-head"><h3>Mirrors</h3><div class="sp"><span style="font-size:11.5px;color:var(--text-3)">' +
+        (health === 'ok' ? 'All good' : health === 'warn' ? 'Degraded' : 'Needs re-upload') + '</span></div></div>' +
+      mirrorListHTML(p) +
+      '<div class="sec-head" style="margin-top:22px"><h3>Comments (' + commentCount(p.id) + ')</h3></div>' +
+      commentsHTML(p.id) +
+      (can('comment')
+        ? '<div style="display:flex;gap:9px;margin-top:12px">' +
+            '<input class="input" id="cmtInput" placeholder="Say something useful…" maxlength="400">' +
+            '<button class="btn primary" data-action="comment-add" data-id="' + p.id + '">Post</button></div>'
+        : '<div class="notice" style="margin-top:12px">' + I.info + '<div>Sign in to join the conversation.</div></div>') +
+    '</div>';
+
+  openModal(html);
+}
+function kv(k, v){
+  return '<div><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + '</div></div>';
+}
+function mirrorListHTML(p){
+  const ms = p.mirrors || [];
+  if (!ms.length) return '<div class="notice warn">' + I.warn + '<div>No mirrors on file. Report this pack so a helper can restore it.</div></div>';
+  return ms.map((m, i) => {
+    const dot = m.status === 'ok' ? 'var(--ok)' : m.status === 'warn' ? 'var(--warn)' : 'var(--danger)';
+    return '<div class="mirror' + (m.status === 'dead' ? ' dead' : '') + '">' +
+      '<span class="status-dot" style="background:' + dot + ';box-shadow:0 0 8px ' + dot + '"></span>' +
+      '<div style="min-width:0;flex:1"><div class="host">' + esc(m.host) + '</div>' +
+      '<div class="url">' + esc(m.url) + '</div></div>' +
+      '<div class="sp">' +
+        '<button class="btn sm" data-action="copy-url" data-url="' + esc(m.url) + '">' + I.copy + '</button>' +
+        (m.status !== 'dead'
+          ? '<button class="btn sm primary" data-action="download-mirror" data-id="' + p.id + '" data-idx="' + i + '">' + I.download + '</button>'
+          : '<button class="btn sm danger" data-action="report-mirror" data-id="' + p.id + '" data-idx="' + i + '">Report</button>') +
+      '</div></div>';
+  }).join('');
+}
+function commentsHTML(packId){
+  const list = DB.comments.filter(c => c.pack_id === packId).sort((a,b) => b.created_at - a.created_at);
+  if (!list.length) return '<p style="font-size:12.5px;color:var(--text-3)">No comments yet.</p>';
+  return list.slice(0, 30).map(c => {
+    const u = userById(c.user_id);
+    return '<div class="comment">' + avatarHTML(u, 'sm') +
+      '<div class="body"><div class="top"><b>' + esc(u ? u.display_name : 'Deleted') + '</b>' +
+      '<span>@' + esc(u ? u.handle : 'unknown') + ' · ' + ago(c.created_at) + '</span></div>' +
+      '<p>' + esc(c.body) + '</p></div></div>';
+  }).join('');
+}
+
+/* ------------------------------------------------------------ DOWNLOAD --- */
+function openDownload(packId){
+  const p = DB.packs.find(x => x.id === packId);
+  if (!p) return;
+  const owner = userById(p.owner_id);
+  const handle = owner ? owner.handle : 'unknown';
+  const creditText = 'Scenepack by @' + handle + ' on TikTok';
+
+  openSheet(
+    '<div class="sheet-credit">' + avatarHTML(owner, 'md') +
+      '<div class="who"><b>' + esc(owner ? owner.display_name : 'Unknown') + '</b>' +
+      '<span>@' + esc(handle) + ' made this scenepack</span></div></div>' +
+    '<div class="notice warn" style="margin-bottom:16px">' + I.warn +
+      '<div><b>Heads up.</b> Files live on the contributor\'s own storage — Google Drive, Mega, Dropbox. ' +
+      'Some hosts show quota warnings or require a login. That\'s normal for a community index.</div></div>' +
+    '<button class="btn block" data-action="copy-credit" data-id="' + p.id + '" style="margin-bottom:14px">' +
+      I.copy + ' Copy credit text</button>' +
+    '<div class="notice" style="margin-bottom:16px">' + I.info +
+      '<div>Paste this in your caption or pinned comment:<br><code style="font-size:12px;color:var(--text)">' +
+      esc(creditText) + '</code></div></div>' +
+    '<label class="agree" style="margin-bottom:16px">' +
+      '<input type="checkbox" id="creditGate">' +
+      '<span>I will credit <b>@' + esc(handle) + '</b> when I use this pack.</span></label>' +
+    '<div id="mirrorGate" style="opacity:.35;pointer-events:none">' +
+      mirrorListHTML(p) +
+    '</div>' +
+    '<div style="margin-top:14px;display:flex;gap:9px">' +
+      '<button class="btn ghost block" data-action="close-sheet">Close</button>' +
+      '<button class="btn block" data-action="report-open" data-id="' + p.id + '">' + I.flag + ' Report</button>' +
+    '</div>'
+  );
+
+  const gate = $('#creditGate');
+  gate.addEventListener('change', () => {
+    const g = $('#mirrorGate');
+    g.style.opacity = gate.checked ? '1' : '.35';
+    g.style.pointerEvents = gate.checked ? 'auto' : 'none';
+  });
+}
+
+/* ------------------------------------------------------------- REQUESTS -- */
+function viewRequests(){
+  const list = DB.requests.slice().sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0) || b.created_at - a.created_at);
+  let html = '<div class="wrap">';
+
+  html += '<div class="panel glass" style="margin-bottom:18px">' +
+    '<div class="sec-head"><h3>Request a pack</h3></div>' +
+    (can('request')
+      ? '<div class="field"><label>What are you looking for?</label>' +
+          '<input class="input" id="reqTitle" placeholder="e.g. Interstellar — wormhole scene, textless 4K" maxlength="140"></div>' +
+        '<div style="display:flex;gap:10px">' +
+          '<select class="input" id="reqCat" style="flex:1">' + CATEGORIES.map(c => '<option>' + c + '</option>').join('') + '</select>' +
+          '<button class="btn primary" data-action="req-add">Post request</button></div>'
+      : '<div class="notice">' + I.info + '<div>Sign in to post a request.</div></div>') +
+  '</div>';
+
+  if (!list.length){
+    html += '<div class="empty"><div class="box">' + I.board + '</div>' +
+      '<h3>No requests yet.</h3><p>When the community can\'t find a pack, it goes here. Fulfil one and earn a Helper badge.</p></div>';
+  } else {
+    html += list.map(r => {
+      const u = userById(r.requester_id);
+      const voted = currentUser() && DB.votes.some(v => v.request_id === r.id && v.user_id === currentUser().id);
+      return '<div class="req">' +
+        '<button class="upvote' + (voted ? ' on' : '') + '" data-action="req-vote" data-id="' + r.id + '">' +
+          I.arrowUp + '<b>' + (r.upvotes || 0) + '</b></button>' +
+        '<div class="grow" style="flex:1;min-width:0">' +
+          '<b style="font-size:14px;font-weight:620;display:block;margin-bottom:4px">' + esc(r.title) + '</b>' +
+          '<div class="meta"><span>' + esc(r.category || 'Any') + '</span><i>·</i>' +
+          '<span>@' + esc(u ? u.handle : 'unknown') + '</span><i>·</i><span>' + ago(r.created_at) + '</span></div>' +
+          (r.description ? '<p style="font-size:12.5px;color:var(--text-2);margin-top:8px;line-height:1.55">' + esc(r.description) + '</p>' : '') +
+          (r.status === 'fulfilled' ? '<div style="margin-top:9px"><span class="bdg trusted">Fulfilled</span></div>' : '') +
+        '</div>' +
+        '<button class="btn sm" data-action="req-fulfil" data-id="' + r.id + '">Link a pack</button>' +
+      '</div>';
+    }).join('');
+  }
+  html += '</div>';
+  return html;
+}
+
+/* --------------------------------------------------------------- UPLOAD -- */
+function newUpload(){
+  return { step: 1, category: 'Movies', title: '', source: '', description: '',
+           tags: [], res: '1080p', size: '', clips: '', format: 'MP4 — H.264',
+           license: 'credit_required', preview_url: '', mirrors: [{ host: 'Google Drive', url: '' }],
+           error: '' };
+}
+function viewUpload(){
+  if (!can('upload')){
+    return '<div class="wrap"><div class="empty"><div class="box">' + I.upload + '</div>' +
+      '<h3>Contributor access needed.</h3>' +
+      '<p>Uploading requires a contributor account. ' + (isAuthed() ? 'Ask an admin to upgrade your role.' : 'Create a free account to get started.') + '</p>' +
+      (!isAuthed() ? '<button class="btn primary" data-action="open-auth">Create account</button>' : '') +
+      '</div></div>';
+  }
+  if (!S.upload) S.upload = newUpload();
+  const u = S.upload;
+  const steps = ['Category','Details','Credit','Files','Review'];
+
+  let html = '<div class="wrap" style="max-width:680px">';
+  html += '<div class="panel glass">';
+  html += '<div class="steps">' + steps.map((_, i) => '<div class="step' + (i + 1 <= u.step ? ' on' : '') + '"></div>').join('') + '</div>';
+  html += '<div style="font-size:11.5px;color:var(--text-3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Step ' + u.step + ' of 5</div>';
+  html += '<h3 style="font-size:19px;margin-bottom:18px">' + steps[u.step - 1] + '</h3>';
+  if (u.error) html += '<div class="notice err" style="margin-bottom:16px">' + I.warn + '<div>' + esc(u.error) + '</div></div>';
+  html += uploadStepHTML(u);
+  html += '<div style="display:flex;gap:9px;margin-top:22px">' +
+    (u.step > 1 ? '<button class="btn ghost" data-action="up-back">Back</button>' : '') +
+    '<div style="flex:1"></div>' +
+    (u.step < 5
+      ? '<button class="btn primary" data-action="up-next">Continue</button>'
+      : '<button class="btn primary" data-action="up-submit">Submit for review</button>') +
+  '</div>';
+  html += '</div>';
+
+  html += '<div class="notice" style="margin-top:16px">' + I.info +
+    '<div><b>ScareBox is an index, not a file host.</b> You keep your files on your own storage and submit the links. ' +
+    'Multiple mirrors are strongly recommended — links rot, and a pack with three mirrors outlives one with a single Drive link.</div></div>';
+  html += '</div>';
+  return html;
+}
+function uploadStepHTML(u){
+  const u2 = currentUser();
+  switch (u.step){
+    case 1:
+      return '<div class="field"><label>Category</label><select class="input" data-up="category">' +
+        CATEGORIES.map(c => '<option' + (u.category === c ? ' selected' : '') + '>' + c + '</option>').join('') +
+        '</select></div>' +
+        '<div class="hint">Pick the closest fit. You can refine tags later.</div>';
+    case 2:
+      return '<div class="field"><label>Title</label><input class="input" data-up="title" value="' + esc(u.title) + '" placeholder="e.g. Blade Runner 2049 — Rain scene, textless"></div>' +
+        '<div class="field"><label>Source</label><input class="input" data-up="source" value="' + esc(u.source) + '" placeholder="e.g. Blade Runner 2049 (2017), dir. Villeneuve"></div>' +
+        '<div class="field"><label>Description</label><textarea class="input" data-up="description" placeholder="What\'s inside? Scene notes, quality, anything an editor should know.">' + esc(u.description) + '</textarea></div>' +
+        '<div class="field"><label>Tags</label><div class="chiprow" style="margin-bottom:0">' +
+          TAGS.map(t => '<button type="button" class="chip tag' + (u.tags.includes(t) ? ' active' : '') + '" data-action="up-tag" data-tag="' + esc(t) + '">' + esc(t) + '</button>').join('') +
+        '</div></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+          '<div class="field"><label>Resolution</label><select class="input" data-up="res">' +
+            RES.map(r => '<option' + (u.res === r ? ' selected' : '') + '>' + r + '</option>').join('') + '</select>' +
+            '<div class="hint">720p minimum.</div></div>' +
+          '<div class="field"><label>File size</label><input class="input" data-up="size" value="' + esc(u.size) + '" placeholder="e.g. 2.4 GB"></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+          '<div class="field"><label>Clip count</label><input class="input" data-up="clips" type="number" min="0" value="' + esc(u.clips) + '" placeholder="e.g. 84"></div>' +
+          '<div class="field"><label>Format</label><select class="input" data-up="format">' +
+            ['MP4 — H.264','MP4 — H.265','MOV — ProRes','MKV — H.264'].map(f =>
+              '<option' + (u.format === f ? ' selected' : '') + '>' + f + '</option>').join('') + '</select></div>' +
+        '</div>' +
+        '<div class="field"><label>License</label><select class="input" data-up="license">' +
+          Object.keys(LICENSES).map(k => '<option value="' + k + '"' + (u.license === k ? ' selected' : '') + '>' + LICENSES[k] + '</option>').join('') +
+        '</select><div class="hint">Credit Required is the default and the community norm.</div></div>';
+    case 3:
+      return '<div class="notice ok" style="margin-bottom:16px">' + I.check +
+        '<div><b>Your credit is locked to your account.</b> Nobody can submit a pack under your name, and nobody can take it from you.</div></div>' +
+        '<div class="field"><label>Credit handle</label>' +
+          '<input class="input" value="@" + esc(u2 ? u2.handle : "") + '" disabled style="opacity:.75"></div>' +
+        '<div class="field"><label>Co-credits</label><input class="input" data-up="cocredits" value="' + esc(u.cocredits || '') + '" placeholder="@editor1, @editor2 (optional)"><div class="hint">Comma-separated. Use only if someone else genuinely helped build this pack.</div></div>' +
+        '<div class="notice" style="margin-top:16px">' + I.info +
+          '<div>Include a <code>credits.txt</code> and a <code>README.html</code> inside your zip. Moderators check for these. ' +
+          'ScareBox guarantees credit on-site — inside the archive is up to you, and it\'s what keeps the community honest.</div></div>';
+    case 4:
+      return '<div class="field"><label>Preview image URL</label><input class="input" data-up="preview_url" value="' + esc(u.preview_url) + '" placeholder="https://… (optional, 16:9 recommended)"></div>' +
+        '<div class="field"><label>Mirrors</label>' +
+          u.mirrors.map((m, i) =>
+            '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+              '<select class="input" data-up="mirror-host" data-idx="' + i + '" style="width:150px;flex:none">' +
+                ['Google Drive','Mega','Dropbox','Mediafire','Pixeldrain','OneDrive','Direct link'].map(h =>
+                  '<option' + (m.host === h ? ' selected' : '') + '>' + h + '</option>').join('') +
+              '</select>' +
+              '<input class="input" data-up="mirror-url" data-idx="' + i + '" value="' + esc(m.url) + '" placeholder="https://…">' +
+              (u.mirrors.length > 1
+                ? '<button class="icon-btn" data-action="up-del-mirror" data-idx="' + i + '">' + I.trash + '</button>' : '') +
+            '</div>').join('') +
+          '<button class="btn sm" data-action="up-add-mirror" style="margin-top:4px">' + I.plus + ' Add mirror</button>' +
+          '<div class="hint">Three or more mirrors is the community standard. One link is a single point of failure.</div>' +
+        '</div>' +
+        '<div class="notice warn">' + I.warn +
+          '<div>By submitting you confirm you have the right to share these clips, that you included a credits file, ' +
+          'and that the files contain no malware.</div></div>';
+    case 5:
+      const u3 = currentUser();
+      return '<div class="kv" style="margin-bottom:18px">' +
+          kv('Title', u.title || '—') + kv('Category', u.category) +
+          kv('Resolution', u.res) + kv('Size', u.size || '—') +
+          kv('Clips', u.clips || '—') + kv('Format', u.format) +
+          kv('License', LICENSES[u.license]) + kv('Mirrors', String(u.mirrors.filter(m => m.url).length)) +
+        '</div>' +
+        (u.tags.length ? '<div class="taglist" style="margin-bottom:16px">' +
+          u.tags.map(t => '<span class="chip tag mini active">' + esc(t) + '</span>').join('') + '</div>' : '') +
+        '<div class="notice">' + I.info +
+          '<div>Credit will read: <b>Scenepack by @' + esc(u3 ? u3.handle : '') + ' on TikTok</b>. ' +
+          'Your pack enters the moderation queue and publishes once approved.</div></div>';
+    default: return '';
+  }
+}
+function syncUploadFromDOM(){
+  const u = S.upload;
+  if (!u) return;
+  $$('[data-up]').forEach(el => {
+    const k = el.dataset.up;
+    if (k === 'mirror-url'){ u.mirrors[+el.dataset.idx].url = el.value; }
+    else if (k === 'mirror-host'){ u.mirrors[+el.dataset.idx].host = el.value; }
+    else if (k === 'tags'){ /* handled by chips */ }
+    else if (k in u){ u[k] = el.value; }
+  });
+}
+
+/* -------------------------------------------------------------- PROFILE -- */
+function viewProfile(){
+  const me = currentUser();
+  const u = S.profileUser ? userById(S.profileUser) : me;
+  if (!u){
+    return '<div class="wrap"><div class="empty"><div class="box">' + I.user + '</div>' +
+      '<h3>No account.</h3><p>Sign in to see your Box.</p>' +
+      '<button class="btn primary" data-action="open-auth">Sign in</button></div></div>';
+  }
+  const isMe = me && me.id === u.id;
+  const uploads = userUploads(u.id);
+  const approved = uploads.filter(p => p.status === 'approved');
+  const favs = DB.favorites.filter(f => f.user_id === u.id);
+  const downloads = DB.downloads.filter(d => d.user_id === u.id);
+  const restores = DB.packs.filter(p => (p.restorers || []).includes(u.id)).length;
+  const totalDownloads = uploads.reduce((a, p) => a + (p.download_count || 0), 0);
+  const tp = trustProgress(u);
+  const b = u.badges || {};
+
+  let tabs = [['uploads','Uploads'],['favorites','Favorites'],['downloads','Downloads'],['requests','Requests']];
+  if (isMe) tabs.push(['pending','Pending']);
+
+  let items = [];
+  if (S.profileTab === 'uploads') items = uploads.filter(p => p.status === 'approved');
+  else if (S.profileTab === 'favorites') items = favs.map(f => DB.packs.find(p => p.id === f.pack_id)).filter(p => p && p.status === 'approved');
+  else if (S.profileTab === 'downloads') items = downloads.map(d => DB.packs.find(p => p.id === d.pack_id)).filter(Boolean);
+  else if (S.profileTab === 'pending') items = uploads.filter(p => p.status !== 'approved');
+
+  let html = '<div class="wrap">';
+  html += '<div class="cover glass" style="padding:0"><div class="mesh" style="background:' + meshPreset(u.cover_idx || 0) + '"></div></div>';
+  html += '<div class="prof-head">';
+  html += avatarHTML(u, 'lg');
+  html += '<div class="prof-id">';
+  html += '<h2>' + esc(u.display_name) + (b.verified ? '<span class="verified">' + I.verified + '</span>' : '') + '</h2>';
+  html += '<div class="handle">@' + esc(u.handle) + (u.location ? ' · ' + esc(u.location) : '') + ' · joined ' + ago(u.created_at) + '</div>';
+  if (u.bio) html += '<p class="bio">' + esc(u.bio) + '</p>';
+  html += '<div class="badge-row">';
+  if (b.top) html += '<span class="bdg top">Top Contributor</span>';
+  if (b.trusted) html += '<span class="bdg trusted">Trusted</span>';
+  if (b.helper) html += '<span class="bdg helper">Helper</span>';
+  if (RANK[roleOf(u)] >= 4) html += '<span class="bdg">' + esc(roleOf(u).toUpperCase()) + '</span>';
+  html += '<span class="bdg">' + approved.length + ' packs</span>';
+  html += '</div></div>';
+  html += '<div style="display:flex;gap:9px;padding-bottom:6px">';
+  if (isMe) html += '<button class="btn" data-action="open-drawer">' + I.cog + ' Customize</button>';
+  html += '</div></div>';
+
+  html += '<div class="stats">' +
+    '<div class="stat"><b>' + nf(approved.length) + '</b><span>Uploads</span></div>' +
+    '<div class="stat"><b>' + nf(totalDownloads) + '</b><span>Downloads</span></div>' +
+    '<div class="stat"><b>' + nf(favs.length) + '</b><span>Favorites</span></div>' +
+    '<div class="stat"><b>' + nf(restores) + '</b><span>Re-uploads</span></div>' +
+  '</div>';
+
+  html += '<div class="trust"><div class="trust-head"><span>Trust level — ' + esc(tp.label) + '</span>' +
+    '<span>' + (u.trust_score || 0) + ' / ' + tp.next + '</span></div>' +
+    '<div class="bar"><i style="width:' + Math.min(100, Math.round(((u.trust_score || 0) / tp.next) * 100)) + '%"></i></div>' +
+    '<div class="hint">Approved packs, downloads and restored links raise your trust. Trusted contributors publish instantly.</div></div>';
+
+  html += '<div class="tabs">' + tabs.map(([k, label]) =>
+    '<button class="tab' + (S.profileTab === k ? ' active' : '') + '" data-action="prof-tab" data-tab="' + k + '">' + label + '</button>').join('') + '</div>';
+
+  html += '<div style="margin-top:18px">';
+  if (!items.length){
+    html += '<div class="empty"><div class="box">' + I.box + '</div><h3>Empty.</h3><p>Nothing in this Box yet.</p></div>';
+  } else if (S.profileTab === 'pending'){
+    html += items.map(p => '<div class="rowitem">' +
+      '<div style="width:74px;height:44px;border-radius:9px;flex:none;background:' + meshFor(p.id + p.title) + '"></div>' +
+      '<div class="grow"><b>' + esc(p.title) + '</b><span>' + esc(p.category) + ' · ' + ago(p.created_at) + '</span></div>' +
+      '<span class="bdg ' + (p.status === 'approved' ? 'trusted' : p.status === 'rejected' ? '' : 'helper') + '">' +
+        (p.status === 'pending' ? 'In review' : p.status === 'rejected' ? 'Rejected' : p.status) + '</span>' +
+    '</div>').join('');
+  } else {
+    html += '<div class="' + (S.viewMode === 'grid' ? 'grid' : 'list') + '">' + items.map(cardHTML).join('') + '</div>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+/* ---------------------------------------------------------------- ADMIN -- */
+function viewAdmin(){
+  const pending = DB.packs.filter(p => p.status === 'pending');
+  const openReports = DB.reports.filter(r => r.status === 'open');
+  const allReports = DB.reports.slice().sort((a,b) => b.created_at - a.created_at).slice(0, 40);
+  const needsReupload = DB.packs.filter(p => p.status === 'approved' && packHealth(p) === 'dead');
+
+  let html = '<div class="wrap">';
+  html += '<div class="stats" style="margin-bottom:20px">' +
+    '<div class="stat"><b>' + DB.packs.length + '</b><span>Total packs</span></div>' +
+    '<div class="stat"><b>' + pending.length + '</b><span>In queue</span></div>' +
+    '<div class="stat"><b>' + openReports.length + '</b><span>Open reports</span></div>' +
+    '<div class="stat"><b>' + DB.users.length + '</b><span>Accounts</span></div>' +
+    '<div class="stat"><b>' + needsReupload.length + '</b><span>Needs re-upload</span></div>' +
+  '</div>';
+
+  html += '<div class="panel glass"><div class="sec-head"><h3>Moderation queue</h3>' +
+    '<div class="sp"><span style="font-size:12px;color:var(--text-3)">' + pending.length + ' waiting</span></div></div>';
+  if (!pending.length){
+    html += '<p style="font-size:13px;color:var(--text-3)">Queue is clear. Nothing to review.</p>';
+  } else {
+    html += pending.map(p => {
+      const owner = userById(p.owner_id);
+      return '<div class="rowitem" style="align-items:flex-start;flex-wrap:wrap">' +
+        '<div style="width:96px;height:56px;border-radius:10px;flex:none;background:' + meshFor(p.id + p.title) + '"></div>' +
+        '<div class="grow" style="flex:1;min-width:180px">' +
+          '<b>' + esc(p.title) + '</b>' +
+          '<span>@' + esc(owner ? owner.handle : '?') + ' · ' + esc(p.category) + ' · ' + esc(p.res) + ' · ' + esc(p.size || '—') + '</span>' +
+          '<div class="meta" style="margin-top:6px"><span>' + (p.mirrors || []).length + ' mirrors</span><i>·</i>' +
+          '<span>license: ' + esc(LICENSES[p.license] || '—') + '</span><i>·</i><span>' + ago(p.created_at) + '</span></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:7px;flex-wrap:wrap">' +
+          '<button class="btn sm" data-action="open-pack" data-id="' + p.id + '">View</button>' +
+          '<button class="btn sm ok" data-action="mod-approve" data-id="' + p.id + '">Approve</button>' +
+          '<button class="btn sm danger" data-action="mod-reject" data-id="' + p.id + '">Reject</button>' +
+        '</div></div>';
+    }).join('');
+  }
+  html += '</div>';
+
+  html += '<div class="panel glass" style="margin-top:16px"><div class="sec-head"><h3>Reports</h3></div>';
+  if (!allReports.length){
+    html += '<p style="font-size:13px;color:var(--text-3)">No reports filed.</p>';
+  } else {
+    html += allReports.map(r => {
+      const p = DB.packs.find(x => x.id === r.pack_id);
+      const u = userById(r.reporter_id);
+      return '<div class="rowitem">' +
+        '<div class="grow"><b>' + esc(p ? p.title : 'Deleted pack') + '</b>' +
+        '<span>' + esc(r.reason.replace('_',' ')) + ' · by @' + esc(u ? u.handle : 'guest') + ' · ' + ago(r.created_at) + '</span>' +
+        (r.note ? '<div style="font-size:12px;color:var(--text-2);margin-top:6px">' + esc(r.note) + '</div>' : '') +
+        '</div>' +
+        (r.status === 'open'
+          ? '<div style="display:flex;gap:7px">' +
+              '<button class="btn sm ok" data-action="report-resolve" data-id="' + r.id + '">Resolve</button>' +
+              '<button class="btn sm ghost" data-action="report-dismiss" data-id="' + r.id + '">Dismiss</button></div>'
+          : '<span class="bdg">' + esc(r.status) + '</span>') +
+      '</div>';
+    }).join('');
+  }
+  html += '</div>';
+
+  if (needsReupload.length){
+    html += '<div class="panel glass" style="margin-top:16px"><div class="sec-head"><h3>Needs re-upload</h3></div>' +
+      needsReupload.map(p => '<div class="rowitem"><div class="grow"><b>' + esc(p.title) + '</b>' +
+      '<span>' + (p.mirrors || []).length + ' mirrors, all dead</span></div>' +
+      '<button class="btn sm" data-action="open-pack" data-id="' + p.id + '">Open</button></div>').join('') +
+      '</div>';
+  }
+
+  html += '<div class="panel glass" style="margin-top:16px"><div class="sec-head"><h3>Accounts</h3></div>' +
+    DB.users.map(u => '<div class="rowitem">' + avatarHTML(u, 'sm') +
+      '<div class="grow"><b>' + esc(u.display_name) + '</b><span>@' + esc(u.handle) + ' · ' + esc(roleOf(u)) + ' · trust ' + (u.trust_score || 0) + '</span></div>' +
+      '<select class="input" style="width:auto;padding:6px 28px 6px 10px;font-size:12px" data-action="set-role" data-id="' + u.id + '">' +
+        ['member','contributor','trusted','mod','admin'].map(r =>
+          '<option value="' + r + '"' + (roleOf(u) === r ? ' selected' : '') + '>' + r + '</option>').join('') +
+      '</select></div>').join('') +
+  '</div>';
+
+  html += '<div class="panel glass" style="margin-top:16px"><div class="sec-head"><h3>Backend — go multi-user</h3></div>' +
+    '<p style="font-size:13px;color:var(--text-2);line-height:1.65;margin-bottom:14px">' +
+    'This deployment stores everything in the browser. That makes it a working, zero-cost archive for one device. ' +
+    'To make it a shared community site with real accounts across devices, point the same UI at Supabase. ' +
+    'The schema below matches the data model this app already uses.</p>' +
+    '<details><summary>PostgreSQL schema for Supabase</summary><div class="dbody">' +
+    '<pre id="sqlBlock">' + esc(SQL_SCHEMA) + '</pre>' +
+    '<button class="btn sm" data-action="copy-sql" style="margin-top:10px">' + I.copy + ' Copy schema</button>' +
+    '</div></details>' +
+    '<details><summary>Row Level Security policies</summary><div class="dbody"><pre>' + esc(SQL_RLS) + '</pre></div></details>' +
+    '<details><summary>Export / import this instance</summary><div class="dbody">' +
+      '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+        '<button class="btn sm" data-action="export-db">Export JSON</button>' +
+        '<label class="btn sm" style="cursor:pointer">Import JSON<input type="file" id="importFile" accept="application/json" hidden></label>' +
+        '<button class="btn sm danger" data-action="wipe-db">Reset all data</button>' +
+      '</div>' +
+      '<div class="hint">Export gives you a portable snapshot. Import restores it on any device or browser.</div>' +
+    '</div></details>' +
+  '</div>';
+
+  html += '</div>';
+  return html;
+}
+function viewDenied(){
+  return '<div class="wrap"><div class="empty"><div class="box">' + I.shield + '</div>' +
+    '<h3>Not for you.</h3><p>Moderator access required.</p></div></div>';
+}
+
+/* ---------------------------------------------------------------- PAGES -- */
+const PAGES = {
+  terms: { title: 'Terms of Use', body: `
+    <p>ScareBox is an index of scenepacks. We do not host files. Every pack you see here lives on the contributor's own cloud storage and is linked by URL.</p>
+    <h3>What you agree to</h3>
+    <ul>
+      <li>You will credit the creator when you use their pack.</li>
+      <li>You will not upload content you have no right to share.</li>
+      <li>You will not upload malware, or links to it.</li>
+      <li>You will not scrape, mirror, or resell the archive as your own.</li>
+    </ul>
+    <h3>What we owe you</h3>
+    <ul>
+      <li>Your handle stays bound to every pack you upload.</li>
+      <li>We respond to every valid takedown notice.</li>
+      <li>We do not sell your data.</li>
+    </ul>
+    <h3>No warranty</h3>
+    <p>Links rot. Hosts fail. Downloads are external and out of our control. ScareBox is provided as-is.</p>` },
+  privacy: { title: 'Privacy', body: `
+    <p>ScareBox stores the minimum required to run an archive.</p>
+    <h3>What we store</h3>
+    <ul>
+      <li>Your display name, handle, and optional bio and location.</li>
+      <li>Your email, used only for sign-in.</li>
+      <li>Your uploads, favorites, and downloads, so the site can show them back to you.</li>
+    </ul>
+    <h3>What we don't do</h3>
+    <ul>
+      <li>We don't sell data.</li>
+      <li>We don't run third-party ad trackers.</li>
+      <li>We don't share your email.</li>
+    </ul>
+    <h3>This deployment</h3>
+    <p>This instance stores everything locally in your browser. Nothing leaves your device. Clearing site data erases it permanently — export first if you want a backup.</p>` },
+  dmca: { title: 'DMCA & Takedown', body: `
+    <p>ScareBox links to content hosted elsewhere. We do not host scenepack files.</p>
+    <h3>If you own the rights</h3>
+    <p>Send a notice containing:</p>
+    <ul>
+      <li>Identification of the copyrighted work.</li>
+      <li>The exact ScareBox URL(s) of the pack or mirror.</li>
+      <li>Your contact details.</li>
+      <li>A statement of good-faith belief that the use is unauthorised.</li>
+      <li>A statement, under penalty of perjury, that the information is accurate and you are the owner or authorised agent.</li>
+      <li>Your physical or electronic signature.</li>
+    </ul>
+    <h3>What happens next</h3>
+    <p>Valid notices are actioned promptly. The mirror or pack is disabled, and the contributor is notified. Repeat infringers lose upload rights.</p>
+    <h3>Counter-notice</h3>
+    <p>Contributors may submit a counter-notice if they believe a removal was mistaken.</p>
+    <div class="notice warn" style="margin-top:16px">
+      <div><b>Before you deploy publicly:</b> replace this text with your real contact address, and consult a lawyer about safe-harbour requirements in your jurisdiction.</div>
+    </div>` },
+  guide: { title: 'How ScareBox Works', body: `
+    <h3>The idea</h3>
+    <p>Scenepacks are scattered across Drive links, Discord drops, and TikTok comments. ScareBox puts them in one searchable place — with credit attached and impossible to miss.</p>
+    <h3>Index, not host</h3>
+    <p>Contributors keep their files. ScareBox stores the metadata and the links. That means zero hosting cost, no 24/7 server, and contributors keep full control.</p>
+    <h3>Mirrors</h3>
+    <p>Links die. Every pack should have three or more mirrors on different hosts. When one goes down, report it — a helper will restore it and earn a badge.</p>
+    <h3>Credit</h3>
+    <p>Your handle is bound to your account. It appears on the pack page, the download sheet, search results, and every preview. Nobody can upload under your name.</p>
+    <p>Credit downstream — inside your final edit — is a community norm, not something anyone can enforce. Be the editor who credits anyway.</p>
+    <h3>Trust levels</h3>
+    <p>New contributors go into a moderation queue. Approved packs, downloads, and restored links raise your trust score. At 60 you publish instantly.</p>` }
+};
+function viewPage(){
+  const p = PAGES[S.pageSlug] || PAGES.guide;
+  return '<div class="wrap"><div class="doc glass panel">' +
+    '<button class="btn sm ghost" data-action="nav" data-view="library" style="margin-bottom:18px">← Back to library</button>' +
+    '<h2>' + esc(p.title) + '</h2>' + p.body + '</div></div>';
+}
+
+/* ---------------------------------------------------------------- DRAWER -- */
+function openCustomize(){
+  const u = currentUser();
+  if (!u) return toast('Sign in to customize your Box.', 'warn');
+  const b = u.badges || {}, pv = u.privacy || {};
+
+  const html =
+    '<div class="drawer-head"><h3 style="flex:1;font-size:15px">Customize</h3>' +
+      '<button class="icon-btn" data-action="close-drawer">' + I.close + '</button></div>' +
+    '<div class="drawer-body">' +
+      '<div class="field"><label>Display name</label><input class="input" data-cf="display_name" value="' + esc(u.display_name) + '" maxlength="40"></div>' +
+      '<div class="field"><label>TikTok handle</label><input class="input" data-cf="handle" value="' + esc(u.handle) + '" maxlength="30">' +
+        '<div class="hint">Changing your handle changes the credit on all your packs.</div></div>' +
+      '<div class="field"><label>Location</label><input class="input" data-cf="location" value="' + esc(u.location || '') + '" placeholder="Kuala Lumpur" maxlength="40"></div>' +
+      '<div class="field"><label>Bio</label><textarea class="input" data-cf="bio" maxlength="240" placeholder="What do you edit?">' + esc(u.bio || '') + '</textarea></div>' +
+      '<div class="field"><label>Initials</label><input class="input" data-cf="initials" value="' + esc(u.initials || '') + '" maxlength="2" style="width:80px"></div>' +
+
+      '<div class="field"><label>Avatar</label><div class="swatches">' +
+        AVATAR_GRADS.map((g, i) =>
+          '<button class="sw av' + ((u.avatar_idx || 0) === i ? ' on' : '') + '" data-action="set-avatar" data-i="' + i + '" style="background:' + g + '">' +
+          esc((u.initials || u.display_name.slice(0,2)).toUpperCase()) + '</button>').join('') +
+      '</div></div>' +
+
+      '<div class="field"><label>Cover</label><div class="swatches">' +
+        [0,1,2,3,4,5].map(i =>
+          '<button class="sw cover' + ((u.cover_idx || 0) === i ? ' on' : '') + '" data-action="set-cover" data-i="' + i + '" style="background:' + meshPreset(i) + '"></button>').join('') +
+      '</div></div>' +
+
+      '<div class="field"><label>Accent</label><div class="swatches">' +
+        ACCENTS.map((a, i) =>
+          '<button class="sw' + ((u.accent_idx || 0) === i ? ' on' : '') + '" data-action="set-accent" data-i="' + i + '" ' +
+          'style="background:linear-gradient(135deg,' + a[0] + ',' + a[1] + ')"></button>').join('') +
+      '</div></div>' +
+
+      '<div class="field"><label>Glass blur — <span id="blurVal">' + (u.blur != null ? u.blur : 34) + 'px</span></label>' +
+        '<input type="range" class="slider" min="0" max="70" value="' + (u.blur != null ? u.blur : 34) + '" data-cf-range="blur"></div>' +
+      '<div class="field"><label>Surface opacity — <span id="alphaVal">' + (u.alpha != null ? u.alpha : 5.5) + '%</span></label>' +
+        '<input type="range" class="slider" min="1" max="18" step="0.5" value="' + (u.alpha != null ? u.alpha : 5.5) + '" data-cf-range="alpha"></div>' +
+
+      '<div class="field"><label>Badges</label>' +
+        toggleRow('Top Contributor', 'top', !!b.top) +
+        toggleRow('Trusted', 'trusted', !!b.trusted) +
+        toggleRow('Helper', 'helper', !!b.helper) +
+      '</div>' +
+
+      '<div class="field"><label>Privacy</label>' +
+        toggleRow('Public profile', 'publicProfile', pv.publicProfile !== false) +
+        toggleRow('Show stats', 'showStats', pv.showStats !== false) +
+        toggleRow('Show trust level', 'showTrust', pv.showTrust !== false) +
+      '</div>' +
+    '</div>' +
+    '<div class="drawer-foot">' +
+      '<button class="btn ghost" data-action="reset-profile">Reset</button>' +
+      '<button class="btn primary block" data-action="save-profile">Save changes</button>' +
+    '</div>';
+
+  openDrawer(html);
+
+  $$('[data-cf-range]').forEach(r => r.addEventListener('input', e => {
+    const k = e.target.dataset.cfRange, v = +e.target.value;
+    if (k === 'blur'){ document.documentElement.style.setProperty('--blur', v + 'px'); $('#blurVal').textContent = v + 'px'; }
+    if (k === 'alpha'){ document.documentElement.style.setProperty('--surface-a', String(v/100)); $('#alphaVal').textContent = v + '%'; }
+  }));
+}
+function toggleRow(label, key, on){
+  return '<div class="toggle-row"><span>' + esc(label) + '</span>' +
+    '<button class="switch' + (on ? ' on' : '') + '" data-action="toggle-flag" data-key="' + key + '"></button></div>';
+}
+
+/* -------------------------------------------------------------- REPORTS -- */
+function openReport(packId){
+  if (!requireAuth('report a pack')) return;
+  const p = DB.packs.find(x => x.id === packId);
+  if (!p) return;
+  openModal(
+    '<div class="modal-head"><h3>Report this pack</h3>' +
+      '<button class="icon-btn" data-action="close-modal">' + I.close + '</button></div>' +
+    '<div class="modal-body">' +
+      '<div class="field"><label>What\'s wrong?</label><select class="input" id="rpReason">' +
+        '<option value="dead_link">Dead link / mirror not working</option>' +
+        '<option value="missing_credit">Missing or wrong credit</option>' +
+        '<option value="stolen">Stolen from another creator</option>' +
+        '<option value="malware">Malware or unsafe file</option>' +
+        '<option value="quality">Below 720p / broken files</option>' +
+        '<option value="other">Something else</option>' +
+      '</select></div>' +
+      '<div class="field"><label>Details (optional)</label><textarea class="input" id="rpNote" placeholder="Which mirror? What happened?"></textarea></div>' +
+      '<div class="notice">' + I.info + '<div>A mirror is auto-hidden once three different people report it dead. That keeps the archive honest without waiting on a moderator.</div></div>' +
+      '<div style="display:flex;gap:9px;margin-top:16px">' +
+        '<button class="btn ghost block" data-action="close-modal">Cancel</button>' +
+        '<button class="btn primary block" data-action="report-submit" data-id="' + packId + '">Submit report</button>' +
+      '</div>' +
+    '</div>', 'sm');
+}
+
+/* ---------------------------------------------------------------- SQL ---- */
+const SQL_SCHEMA = `-- ScareBox schema (PostgreSQL / Supabase)
+
+create table profiles (
+  id           uuid primary key references auth.users(id) on delete cascade,
+  handle       text unique not null,
+  display_name text not null,
+  bio          text,
+  location     text,
+  initials     text,
+  avatar_idx   int  default 0,
+  cover_idx    int  default 0,
+  accent_idx   int  default 0,
+  blur         int  default 34,
+  alpha        numeric default 5.5,
+  badges       jsonb default '{}'::jsonb,
+  privacy      jsonb default '{}'::jsonb,
+  role         text  default 'member',
+  trust_score  int   default 0,
+  created_at   timestamptz default now()
+);
+
+create table packs (
+  id             uuid primary key default gen_random_uuid(),
+  owner_id       uuid references profiles(id) on delete cascade,
+  title          text not null,
+  category       text not null,
+  tags           text[] default '{}',
+  res            text,
+  size           text,
+  clips          int,
+  format         text,
+  mirrors        jsonb default '[]'::jsonb,
+  preview_url    text,
+  license        text default 'credit_required',
+  description    text,
+  source         text,
+  status         text default 'pending',
+  download_count int  default 0,
+  restorers      uuid[] default '{}',
+  created_at     timestamptz default now(),
+  updated_at     timestamptz default now()
+);
+
+create table reports (
+  id          uuid primary key default gen_random_uuid(),
+  pack_id     uuid references packs(id) on delete cascade,
+  mirror_url  text,
+  reporter_id uuid references profiles(id),
+  reason      text,
+  note        text,
+  status      text default 'open',
+  created_at  timestamptz default now()
+);
+
+create table requests (
+  id           uuid primary key default gen_random_uuid(),
+  requester_id uuid references profiles(id),
+  title        text not null,
+  category     text,
+  description  text,
+  upvotes      int default 0,
+  fulfilled_by uuid references packs(id),
+  status       text default 'open',
+  created_at   timestamptz default now()
+);
+
+create table favorites (
+  user_id uuid references profiles(id) on delete cascade,
+  pack_id uuid references packs(id) on delete cascade,
+  primary key (user_id, pack_id)
+);
+
+create table comments (
+  id         uuid primary key default gen_random_uuid(),
+  pack_id    uuid references packs(id) on delete cascade,
+  user_id    uuid references profiles(id) on delete cascade,
+  body       text not null,
+  created_at timestamptz default now()
+);
+
+create index on packs(owner_id);
+create index on packs(category);
+create index on packs(status);
+create index on packs(created_at desc);
+create index on packs using gin(tags);
+create index on reports(pack_id, status);`;
+
+const SQL_RLS = `-- Row Level Security
+
+alter table profiles  enable row level security;
+alter table packs     enable row level security;
+alter table reports   enable row level security;
+alter table requests  enable row level security;
+alter table favorites enable row level security;
+alter table comments  enable row level security;
+
+-- profiles
+create policy "profiles readable by all"
+  on profiles for select using (true);
+create policy "own profile update"
+  on profiles for update using (auth.uid() = id);
+create policy "own profile insert"
+  on profiles for insert with check (auth.uid() = id);
+
+-- packs: everyone reads approved; owners read their own; mods read all
+create policy "packs readable"
+  on packs for select using (
+    status = 'approved'
+    or owner_id = auth.uid()
+    or exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('mod','admin'))
+  );
+create policy "authenticated insert"
+  on packs for insert with check (auth.uid() = owner_id);
+create policy "owner or mod update"
+  on packs for update using (
+    owner_id = auth.uid()
+    or exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('mod','admin'))
+  );
+create policy "owner or mod delete"
+  on packs for delete using (
+    owner_id = auth.uid()
+    or exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('mod','admin'))
+  );
+
+-- reports
+create policy "anyone signed in can report"
+  on reports for insert with check (auth.uid() = reporter_id);
+create policy "mods read reports"
+  on reports for select using (
+    auth.uid() = reporter_id
+    or exists (select 1 from profiles p where p.id = auth.uid() and p.role in ('mod','admin'))
+  );
+
+-- requests
+create policy "requests readable" on requests for select using (true);
+create policy "requests insert"   on requests for insert with check (auth.uid() = requester_id);
+create policy "requests update"   on requests for update using (auth.uid() = requester_id);
+
+-- favorites
+create policy "favorites own" on favorites for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- comments
+create policy "comments readable" on comments for select using (true);
+create policy "comments insert"   on comments for insert with check (auth.uid() = author_id);`;
+
+/* ------------------------------------------------------------- ACTIONS --- */
+const ACTIONS = {
+
+  /* navigation */
+  nav(el){ S.view = el.dataset.view; S.pageSlug = null; S.sidebarOpen = false;
+    if (S.view === 'profile') S.profileUser = null;
+    if (S.view === 'upload' && !S.upload) S.upload = newUpload();
+    closeModal(); closeSheet(); closeDrawer(); render(); },
+  page(el){ S.pageSlug = el.dataset.slug; S.view = 'page'; render(); },
+  'toggle-sidebar'(){ S.sidebarOpen = !S.sidebarOpen; $('#sidebar').classList.toggle('open', S.sidebarOpen); },
+  theme(){ toggleTheme(); },
+  'view-mode'(el){ S.viewMode = el.dataset.mode; renderToolbar(); renderView(); },
+  'clear-filters'(){ S.filter = { q:'', category:'All', tag:'All', sort:'recent' }; render(); },
+  'filter-cat'(el){ S.filter.category = el.dataset.cat; renderView(); },
+  'filter-tag'(el){ S.filter.tag = el.dataset.tag; renderView(); },
+  'prof-tab'(el){ S.profileTab = el.dataset.tab; renderView(); },
+
+  /* auth */
+  'auth-mode'(el){ S.authMode = el.dataset.mode; renderWelcome(); },
+  'guest-enter'(){
+    if (!$('#agreeBox').checked) return toast('Please accept the community rules first.', 'warn');
+    DB.session = { id: 'guest' }; persist(); S.view = 'library'; render();
+  },
+  'open-auth'(){ S.authMode = 'signup'; showWelcomeScreen(); },
+  async signup(){
+    const name = $('#suName').value.trim();
+    const handle = $('#suHandle').value.trim().replace(/^@/, '');
+    const email = $('#suEmail').value.trim().toLowerCase();
+    const pass = $('#suPass').value;
+    const err = $('#suErr');
+    err.innerHTML = '';
+
+    if (!$('#agreeBox').checked) { err.innerHTML = '<div class="err">Accept the community rules to continue.</div>'; return; }
+    if (name.length < 2) { err.innerHTML = '<div class="err">Enter a display name.</div>'; return; }
+    if (!/^[a-zA-Z0-9._]{2,30}$/.test(handle)) { err.innerHTML = '<div class="err">Handle must be 2–30 characters: letters, numbers, dot, underscore.</div>'; return; }
+    if (DB.users.some(u => u.handle.toLowerCase() === handle.toLowerCase())) { err.innerHTML = '<div class="err">That handle is taken.</div>'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.innerHTML = '<div class="err">Enter a valid email.</div>'; return; }
+    if (DB.users.some(u => u.email === email)) { err.innerHTML = '<div class="err">An account with that email already exists.</div>'; return; }
+    if (pass.length < 8) { err.innerHTML = '<div class="err">Password must be at least 8 characters.</div>'; return; }
+
+    const { salt, hash } = await hashPassword(pass);
+    const first = DB.users.length === 0;
+    const user = {
+      id: uid(), handle, display_name: name, email, salt, hash,
+      bio: '', location: '', initials: name.slice(0,2).toUpperCase(),
+      avatar_idx: Math.floor(Math.random() * AVATAR_GRADS.length),
+      cover_idx: 0, accent_idx: 0, blur: 34, alpha: 5.5,
+      badges: first ? { top:true, trusted:true, helper:true, verified:true } : { verified:true },
+      privacy: { publicProfile:true, showStats:true, showTrust:true },
+      role: first ? 'admin' : 'contributor',
+      trust_score: first ? 100 : 0,
+      created_at: Date.now()
+    };
+    DB.users.push(user);
+    DB.session = { id: user.id };
+    persist();
+    toast(first ? 'Welcome, admin. This Box is yours to seed.' : 'Account created. Welcome to ScareBox.', 'ok');
+    S.view = 'library';
+    render();
+  },
+  async signin(){
+    const id = $('#siId').value.trim().replace(/^@/, '').toLowerCase();
+    const pass = $('#siPass').value;
+    const err = $('#siErr');
+    err.innerHTML = '';
+    const u = DB.users.find(x => x.handle.toLowerCase() === id || x.email === id);
+    if (!u) { err.innerHTML = '<div class="err">No account found.</div>'; return; }
+    const { hash } = await hashPassword(pass, u.salt);
+    if (hash !== u.hash) { err.innerHTML = '<div class="err">Incorrect password.</div>'; return; }
+    DB.session = { id: u.id }; persist();
+    toast('Signed in as @' + u.handle, 'ok');
+    S.view = 'library'; render();
+  },
+  signout(){
+    DB.session = null; persist();
+    S.view = 'library'; S.authMode = 'choose';
+    closeModal(); closeSheet(); closeDrawer();
+    render();
+    toast('Signed out.');
+  },
+
+  /* packs */
+  'open-pack'(el){ openPack(el.dataset.id); },
+  'close-modal'(){ closeModal(); },
+  'close-sheet'(){ closeSheet(); },
+  'noop'(){},
+  'toggle-fav'(el){
+    if (!requireAuth('favorite packs')) return;
+    const id = el.dataset.id, u = currentUser();
+    const idx = DB.favorites.findIndex(f => f.pack_id === id && f.user_id === u.id);
+    if (idx >= 0){ DB.favorites.splice(idx, 1); toast('Removed from favorites.'); }
+    else { DB.favorites.push({ user_id: u.id, pack_id: id }); toast('Added to favorites.', 'ok'); }
+    persist();
+    if ($('.scrim')) openPack(id); else { renderView(); }
+  },
+  'copy-credit'(el){
+    const p = DB.packs.find(x => x.id === el.dataset.id);
+    if (!p) return;
+    const owner = userById(p.owner_id);
+    const text = 'Scenepack by @' + (owner ? owner.handle : 'unknown') + ' on TikTok';
+    copy(text).then(() => toast('Credit copied — paste it in your caption.', 'ok'));
+  },
+  'copy-url'(el){ copy(el.dataset.url).then(() => toast('Link copied.', 'ok')); },
+  'copy-sql'(){ copy(SQL_SCHEMA).then(() => toast('Schema copied.', 'ok')); },
+
+  /* download */
+  'download-open'(el){ closeModal(); openDownload(el.dataset.id); },
+  'download-mirror'(el){
+    const p = DB.packs.find(x => x.id === el.dataset.id);
+    if (!p) return;
+    const m = (p.mirrors || [])[+el.dataset.idx];
+    if (!m) return;
+    const gate = $('#creditGate');
+    if (gate && !gate.checked) return toast('Confirm the credit first.', 'warn');
+    const u = currentUser();
+    p.download_count = (p.download_count || 0) + 1;
+    if (u) DB.downloads.push({ user_id: u.id, pack_id: p.id, at: Date.now() });
+    persist();
+    window.open(m.url, '_blank', 'noopener');
+    toast('Opening ' + m.host + '… Credit @' + (userById(p.owner_id) || {}).handle, 'ok');
+    closeSheet();
+    renderView();
+  },
+  'report-mirror'(el){ openReport(el.dataset.id); },
+  'report-open'(el){ openReport(el.dataset.id); },
+  'report-submit'(el){
+    const packId = el.dataset.id;
+    const reason = $('#rpReason').value;
+    const note = $('#rpNote').value.trim();
+    const u = currentUser();
+    DB.reports.push({ id: uid(), pack_id: packId, mirror_url: null, reporter_id: u.id,
+      reason, note, status: 'open', created_at: Date.now() });
+    /* auto-hide a mirror after 3 unique dead-link reports */
+    if (reason === 'dead_link'){
+      const p = DB.packs.find(x => x.id === packId);
+      if (p && p.mirrors && p.mirrors.length){
+        p.mirrors[0].status = p.mirrors[0].status === 'dead' ? 'dead' : 'warn';
+      }
+    }
+    persist();
+    closeModal();
+    toast('Report filed. Thank you.', 'ok');
+    renderView();
+  },
+  'report-resolve'(el){
+    const r = DB.reports.find(x => x.id === el.dataset.id);
+    if (r){ r.status = 'resolved'; persist(); renderView(); toast('Report resolved.', 'ok'); }
+  },
+  'report-dismiss'(el){
+    const r = DB.reports.find(x => x.id === el.dataset.id);
+    if (r){ r.status = 'dismissed'; persist(); renderView(); toast('Report dismissed.'); }
+  },
+
+  /* comments */
+  'comment-add'(el){
+    if (!requireAuth('comment')) return;
+    const input = $('#cmtInput');
+    const body = input.value.trim();
+    if (!body) return;
+    DB.comments.push({ id: uid(), pack_id: el.dataset.id, user_id: currentUser().id,
+      body, created_at: Date.now() });
+    persist();
+    toast('Posted.', 'ok');
+    openPack(el.dataset.id);
+  },
+
+  /* upload */
+  'up-tag'(el){
+    syncUploadFromDOM();
+    const t = el.dataset.tag, u = S.upload;
+    const i = u.tags.indexOf(t);
+    if (i >= 0) u.tags.splice(i, 1); else u.tags.push(t);
+    renderView();
+  },
+  'up-add-mirror'(){ syncUploadFromDOM(); S.upload.mirrors.push({ host:'Mega', url:'' }); renderView(); },
+  'up-del-mirror'(el){ syncUploadFromDOM(); S.upload.mirrors.splice(+el.dataset.idx, 1); renderView(); },
+  'up-back'(){ syncUploadFromDOM(); S.upload.step--; S.upload.error = ''; renderView(); },
+  'up-next'(){
+    syncUploadFromDOM();
+    const u = S.upload;
+    u.error = '';
+    if (u.step === 2){
+      if (u.title.trim().length < 3) { u.error = 'Give your pack a title.'; return renderView(); }
+      if (!u.res || RES.indexOf(u.res) < 0) { u.error = 'Pick a resolution.'; return renderView(); }
+    }
+    if (u.step === 3){
+      if (!u.tags.length){ /* tags optional */ }
+    }
+    if (u.step === 4){
+      const valid = u.mirrors.filter(m => /^https?:\/\/.+/i.test(m.url.trim()));
+      if (!valid.length){ u.error = 'Add at least one valid mirror URL (starting with http).'; return renderView(); }
+      if (valid.length < 3) toast('Only ' + valid.length + ' mirror(s). Three or more is the standard.', 'warn');
+    }
+    u.step++;
+    renderView();
+  },
+  'up-submit'(){
+    syncUploadFromDOM();
+    const u = S.upload, me = currentUser();
+    const mirrors = u.mirrors
+      .filter(m => /^https?:\/\/.+/i.test(m.url.trim()))
+      .map(m => ({ host: m.host, url: m.url.trim(), status: 'ok' }));
+    if (!mirrors.length) { u.error = 'Add at least one valid mirror URL.'; return renderView(); }
+
+    const trusted = RANK[roleOf(me)] >= 3;
+    DB.packs.push({
+      id: uid(), owner_id: me.id,
+      title: u.title.trim(), category: u.category, tags: u.tags.slice(),
+      res: u.res, size: u.size.trim(), clips: +u.clips || 0, format: u.format,
+      mirrors, preview_url: u.preview_url.trim(), license: u.license,
+      description: u.description.trim(), source: u.source.trim(),
+      status: trusted ? 'approved' : 'pending',
+      download_count: 0, restorers: [],
+      created_at: Date.now(), updated_at: Date.now()
+    });
+    recomputeTrust(me);
+    persist();
+    S.upload = newUpload();
+    S.view = 'profile';
+    S.profileTab = 'pending';
+    toast(trusted ? 'Published. Trusted contributors skip the queue.' : 'Submitted. A moderator will review it shortly.', 'ok');
+    render();
+  },
+  'mod-approve'(el){
+    const p = DB.packs.find(x => x.id === el.dataset.id);
+    if (!p) return;
+    p.status = 'approved';
+    const owner = userById(p.owner_id);
+    if (owner) recomputeTrust(owner);
+    persist(); renderView();
+    toast('Approved.', 'ok');
+  },
+  'mod-reject'(el){
+    const p = DB.packs.find(x => x.id === el.dataset.id);
+    if (!p) return;
+    p.status = 'rejected'; persist(); renderView();
+    toast('Rejected.', 'warn');
+  },
+  'set-role'(el){
+    const u = userById(el.dataset.id);
+    if (!u) return;
+    u.role = el.value; persist();
+    toast('@' + u.handle + ' is now ' + el.value + '.', 'ok');
+  },
+
+  /* requests */
+  'req-add'(){
+    if (!can('request')) return;
+    const title = $('#reqTitle').value.trim();
+    if (title.length < 4) return toast('Describe what you need.', 'warn');
+    DB.requests.push({ id: uid(), requester_id: currentUser().id, title,
+      category: $('#reqCat').value, description: '', upvotes: 1,
+      fulfilled_by: null, status: 'open', created_at: Date.now() });
+    persist(); renderView();
+    toast('Request posted.', 'ok');
+  },
+  'req-vote'(el){
+    if (!requireAuth('upvote requests')) return;
+    const u = currentUser(), id = el.dataset.id;
+    const r = DB.requests.find(x => x.id === id);
+    if (!r) return;
+    const i = DB.votes.findIndex(v => v.request_id === id && v.user_id === u.id);
+    if (i >= 0){ DB.votes.splice(i,1); r.upvotes = Math.max(0, (r.upvotes||0) - 1); }
+    else { DB.votes.push({ request_id:id, user_id:u.id }); r.upvotes = (r.upvotes||0) + 1; }
+    persist(); renderView();
+  },
+  'req-fulfil'(el){
+    if (!can('moderate')) return toast('Only moderators can mark requests fulfilled.', 'warn');
+    const r = DB.requests.find(x => x.id === el.dataset.id);
+    if (!r) return;
+    r.status = 'fulfilled'; persist(); renderView();
+    toast('Marked fulfilled.', 'ok');
+  },
+
+  /* customize */
+  'open-drawer'(){ openCustomize(); },
+  'close-drawer'(){ closeDrawer(); },
+  'set-avatar'(el){
+    const u = currentUser(); u.avatar_idx = +el.dataset.i; persist();
+    applyAppearance(); render(); openCustomize();
+  },
+  'set-cover'(el){
+    const u = currentUser(); u.cover_idx = +el.dataset.i; persist(); render(); openCustomize();
+  },
+  'set-accent'(el){
+    const u = currentUser(); u.accent_idx = +el.dataset.i; persist();
+    applyAppearance(); render(); openCustomize();
+  },
+  'toggle-flag'(el){
+    const u = currentUser(), k = el.dataset.key;
+    if (['top','trusted','helper'].includes(k)){
+      u.badges = Object.assign({}, u.badges);
+      u.badges[k] = !u.badges[k];
+    } else {
+      u.privacy = Object.assign({}, u.privacy);
+      u.privacy[k] = !(u.privacy[k] !== false);
+    }
+    persist(); openCustomize(); renderSidebar();
+  },
+  'save-profile'(){
+    const u = currentUser();
+    $$('[data-cf]').forEach(el => {
+      const k = el.dataset.cf;
+      let v = el.value;
+      if (k === 'handle'){
+        v = v.replace(/^@/,'').trim();
+        if (!/^[a-zA-Z0-9._]{2,30}$/.test(v)) { toast('Invalid handle.', 'err'); return; }
+        if (DB.users.some(x => x.id !== u.id && x.handle.toLowerCase() === v.toLowerCase())) {
+          toast('That handle is taken.', 'err'); return;
+        }
+      }
+      if (k === 'initials') v = v.slice(0,2).toUpperCase();
+      u[k] = v;
+    });
+    $$('[data-cf-range]').forEach(r => { u[r.dataset.cfRange] = +r.value; });
+    u.updated_at = Date.now();
+    persist();
+    applyAppearance();
+    closeDrawer();
+    toast('Profile saved.', 'ok');
+    render();
+  },
+  'reset-profile'(){
+    const u = currentUser();
+    u.bio = ''; u.location = ''; u.avatar_idx = 0; u.cover_idx = 0;
+    u.accent_idx = 0; u.blur = 34; u.alpha = 5.5;
+    persist(); applyAppearance(); render(); openCustomize();
+    toast('Reset to defaults.');
+  },
+
+  /* data */
+  'export-db'(){
+    const blob = new Blob([JSON.stringify(DB, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'scarebox-export-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('Exported.', 'ok');
+  },
+  'wipe-db'(){
+    if (!confirm('Erase everything? Packs, accounts, favorites — all of it. This cannot be undone.')) return;
+    localStorage.removeItem(DB_KEY);
+    DB = blankDB(); persist();
+    S.view = 'library'; S.authMode = 'choose';
+    render();
+    toast('Everything erased.', 'warn');
+  }
+};
+
+/* ---------------------------------------------------------------- CLICK -- */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const action = el.dataset.action;
+  const fn = ACTIONS[action];
+  if (!fn) return;
+  if (el.tagName === 'SELECT' && action === 'set-role') return; /* handled on change */
+  if (el.tagName === 'INPUT' && el.type === 'checkbox') return;
+  e.preventDefault();
+  fn(el);
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.action === 'set-role'){ ACTIONS['set-role'](el); return; }
+  if (el.dataset.action === 'sort'){ S.filter.sort = el.value; renderGrid(); return; }
+  if (el.tagName === 'SELECT' && el.dataset.up){ syncUploadFromDOM(); }
+});
+document.addEventListener('input', e => {
+  if (e.target.dataset && e.target.dataset.up) {
+    /* keep local state current as user types so step changes don't lose data */
+    const u = S.upload;
+    if (!u) return;
+    const k = e.target.dataset.up;
+    if (k === 'mirror-url') u.mirrors[+e.target.dataset.idx].url = e.target.value;
+    else if (k === 'mirror-host') u.mirrors[+e.target.dataset.idx].host = e.target.value;
+  }
+});
+
+/* --------------------------------------------------------------- KEYS ---- */
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault();
+    if (S.view !== 'library'){ S.view = 'library'; render(); }
+    const q = $('#q'); if (q) q.focus();
+  }
+  if (e.key === 'Escape'){
+    if ($('#modalRoot .drawer')) closeDrawer();
+    else if ($('#sheetRoot .sheet')) closeSheet();
+    else if ($('#modalRoot .scrim')) closeModal();
+    else if (S.sidebarOpen){ S.sidebarOpen = false; $('#sidebar').classList.remove('open'); }
+  }
+});
+
+/* ---------------------------------------------------------------- INIT --- */
+function showWelcomeScreen(){
+  DB.session = null;
+  $('#welcome').classList.remove('hidden');
+  $('#app').classList.add('hidden');
+  renderWelcome();
+  renderFloaters();
+}
+
+function copy(text){
+  if (navigator.clipboard && window.isSecureContext){
+    return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  ta.remove();
+}
+
+function init(){
+  applyTheme();
+  loadDB();
+  applyAppearance();
+  renderFloaters();
+  render();
+
+  const fileInput = () => $('#importFile');
+  document.addEventListener('change', e => {
+    if (e.target.id !== 'importFile') return;
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data || typeof data !== 'object' || !Array.isArray(data.users)) throw new Error('bad');
+        DB = Object.assign(blankDB(), data);
+        persist();
+        applyAppearance();
+        render();
+        toast('Imported ' + DB.packs.length + ' packs.', 'ok');
+      } catch (err) {
+        toast('That file is not a valid ScareBox export.', 'err');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 920 && S.sidebarOpen){
+      S.sidebarOpen = false;
+      $('#sidebar').classList.remove('open');
+    }
+  });
+
+  /* first run hint */
+  if (!localStorage.getItem('scarebox.hinted')){
+    localStorage.setItem('scarebox.hinted', '1');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
